@@ -6,9 +6,8 @@
     "postinstall": "prisma generate",
     "predev": "prisma migrate deploy && tsx prisma/seed.ts",
     "dev": "next dev",
-    "prebuild": "prisma migrate deploy",
     "build": "next build",
-    "start": "next start",
+    "start": "prisma migrate deploy && tsx prisma/seed.ts && next start -p ${PORT:-3000}",
     "lint": "eslint"
   },
   "prisma": {
