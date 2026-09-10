@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "estoque-cffgroup",
+      "runtimeExecutable": "/Users/nicholas/Documents/Projeto Estoque/scripts/dev.sh",
+      "runtimeArgs": [],
+      "port": 3000
+    }
+  ]
+}

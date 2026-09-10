@@ -1,69 +1,219 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { Header } from "@/components/Header";
+import { StatsCards } from "@/components/StatsCards";
+import { SeedBanner } from "@/components/SeedBanner";
+import { Tabs, TabKey } from "@/components/Tabs";
+import { MaterialsTable } from "@/components/MaterialsTable";
+import { WithdrawalsTable } from "@/components/WithdrawalsTable";
+import { MaterialModal, MaterialFormValues } from "@/components/MaterialModal";
+import { WithdrawalModal, WithdrawalFormValues } from "@/components/WithdrawalModal";
+import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
+import { Material, Withdrawal, getStockStatus } from "@/lib/types";
 
 export default function Home() {
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<TabKey>("estoque");
+
+  const [materialModalOpen, setMaterialModalOpen] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
+
+  const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
+  const [withdrawalPreselect, setWithdrawalPreselect] = useState<Material | null>(null);
+
+  const [deletingMaterial, setDeletingMaterial] = useState<Material | null>(null);
+
+  const fetchMaterials = useCallback(async () => {
+    const res = await fetch("/api/materials");
+    const data = await res.json();
+    setMaterials(data);
+  }, []);
+
+  const fetchWithdrawals = useCallback(async () => {
+    const res = await fetch("/api/withdrawals");
+    const data = await res.json();
+    setWithdrawals(data);
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([fetchMaterials(), fetchWithdrawals()]).finally(() => setLoading(false));
+  }, [fetchMaterials, fetchWithdrawals]);
+
+  const stats = useMemo(() => {
+    const total = materials.length;
+    let lowStock = 0;
+    let outOfStock = 0;
+    for (const m of materials) {
+      const status = getStockStatus(m.quantity, m.minQuantity);
+      if (status === "baixo") lowStock++;
+      if (status === "esgotado") outOfStock++;
+    }
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const withdrawalsLast7Days = withdrawals.filter(
+      (w) => new Date(w.timestamp).getTime() >= sevenDaysAgo
+    ).length;
+
+    return { total, lowStock, outOfStock, withdrawalsLast7Days };
+  }, [materials, withdrawals]);
+
+  const existingCategories = useMemo(
+    () => Array.from(new Set(materials.map((m) => m.category))),
+    [materials]
+  );
+
+  function openNewMaterial() {
+    setEditingMaterial(null);
+    setMaterialModalOpen(true);
+  }
+
+  function openEditMaterial(material: Material) {
+    setEditingMaterial(material);
+    setMaterialModalOpen(true);
+  }
+
+  function openWithdrawal(material: Material | null = null) {
+    setWithdrawalPreselect(material);
+    setWithdrawalModalOpen(true);
+  }
+
+  async function handleMaterialSubmit(values: MaterialFormValues) {
+    const payload = {
+      name: values.name.trim(),
+      category: values.category.trim(),
+      unit: values.unit.trim(),
+      quantity: Number(values.quantity),
+      minQuantity: values.minQuantity.trim() === "" ? 5 : Number(values.minQuantity),
+      location: values.location.trim() || null,
+      supplier: values.supplier.trim() || null,
+      price: values.price.trim() === "" ? null : Number(values.price),
+      purchaseLink: values.purchaseLink.trim() || null,
+    };
+
+    const isEdit = !!editingMaterial;
+    const url = isEdit ? `/api/materials/${editingMaterial!.id}` : "/api/materials";
+    const method = isEdit ? "PATCH" : "POST";
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Não foi possível salvar o material.");
+      }
+      await fetchMaterials();
+      setMaterialModalOpen(false);
+      toast.success(isEdit ? "Material atualizado." : "Material cadastrado.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro inesperado.");
+    }
+  }
+
+  async function handleDeleteConfirm(material: Material) {
+    try {
+      const res = await fetch(`/api/materials/${material.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Não foi possível excluir o material.");
+      }
+      await fetchMaterials();
+      setDeletingMaterial(null);
+      toast.success("Material excluído. O histórico foi preservado.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro inesperado.");
+    }
+  }
+
+  async function handleWithdrawalSubmit(values: WithdrawalFormValues): Promise<string | void> {
+    try {
+      const res = await fetch("/api/withdrawals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          materialId: values.materialId,
+          quantity: Number(values.quantity),
+          date: values.date,
+          withdrawnBy: values.withdrawnBy.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 409) {
+          await fetchMaterials();
+          return body.error || "Estoque insuficiente.";
+        }
+        throw new Error(body.error || "Não foi possível registrar a retirada.");
+      }
+
+      await Promise.all([fetchMaterials(), fetchWithdrawals()]);
+      setWithdrawalModalOpen(false);
+      toast.success("Retirada registrada.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro inesperado.");
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      <Header onNewMaterial={openNewMaterial} onNewWithdrawal={() => openWithdrawal(null)} />
+
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-6 py-8">
+        <SeedBanner />
+
+        <StatsCards
+          total={stats.total}
+          lowStock={stats.lowStock}
+          outOfStock={stats.outOfStock}
+          withdrawalsLast7Days={stats.withdrawalsLast7Days}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        <Tabs active={tab} onChange={setTab} />
+
+        {loading ? (
+          <div className="rounded-[14px] border border-border bg-surface px-6 py-16 text-center text-sm text-muted">
+            Carregando...
+          </div>
+        ) : tab === "estoque" ? (
+          <MaterialsTable
+            materials={materials}
+            onWithdraw={(m) => openWithdrawal(m)}
+            onEdit={openEditMaterial}
+            onDelete={setDeletingMaterial}
+          />
+        ) : (
+          <WithdrawalsTable withdrawals={withdrawals} />
+        )}
       </main>
-    </div>
+
+      <MaterialModal
+        open={materialModalOpen}
+        onClose={() => setMaterialModalOpen(false)}
+        onSubmit={handleMaterialSubmit}
+        material={editingMaterial}
+        existingCategories={existingCategories}
+      />
+
+      <WithdrawalModal
+        open={withdrawalModalOpen}
+        onClose={() => setWithdrawalModalOpen(false)}
+        onSubmit={handleWithdrawalSubmit}
+        materials={materials}
+        preselectedMaterial={withdrawalPreselect}
+      />
+
+      <DeleteConfirmModal
+        material={deletingMaterial}
+        onClose={() => setDeletingMaterial(null)}
+        onConfirm={handleDeleteConfirm}
+      />
+    </>
   );
 }

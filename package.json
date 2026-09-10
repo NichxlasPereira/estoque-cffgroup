@@ -3,15 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
+    "predev": "prisma migrate deploy && tsx prisma/seed.ts",
     "dev": "next dev",
+    "prebuild": "prisma migrate deploy",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
+    "@prisma/client": "6.19.3",
     "next": "16.3.4",
+    "prisma": "6.19.3",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "react-hot-toast": "^2.6.0",
+    "tsx": "^4.23.13"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -22,5 +32,13 @@
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": true,
+    "unrs-resolver@1.12.2": true,
+    "@prisma/client@6.19.3": true,
+    "prisma@6.19.3": true,
+    "@prisma/engines@6.19.3": true
   }
 }
