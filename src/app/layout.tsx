@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Manrope, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -28,25 +29,27 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
+      suppressHydrationWarning
       className={`${fraunces.variable} ${manrope.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-bg text-ink font-sans">
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {children}
         <Toaster
           position="bottom-right"
           toastOptions={{
             style: {
-              background: "#14152a",
-              color: "#f2f0fb",
-              border: "1px solid #292a4c",
-              borderLeft: "3px solid #7c5cf0",
+              background: "var(--surface)",
+              color: "var(--ink)",
+              border: "1px solid var(--border)",
+              borderLeft: "3px solid var(--accent)",
               borderRadius: "12px",
               fontFamily: "var(--font-manrope)",
               fontSize: "14px",
-              boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
+              boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
             },
-            success: { iconTheme: { primary: "#3ddc97", secondary: "#12271f" } },
-            error: { iconTheme: { primary: "#f2637c", secondary: "#2b1620" } },
+            success: { iconTheme: { primary: "var(--ok)", secondary: "var(--ok-soft)" } },
+            error: { iconTheme: { primary: "var(--critical)", secondary: "var(--critical-soft)" } },
           }}
         />
       </body>

@@ -2,6 +2,7 @@
 
 import { IconArrowDownTray, IconPlus } from "./icons";
 import { Button } from "./Button";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   onNewMaterial: () => void;
@@ -55,13 +56,14 @@ export function Header({ onNewMaterial, onNewWithdrawal }: HeaderProps) {
             <span className="font-serif text-lg font-semibold text-white">C</span>
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-semibold text-ink">Estoque CFFGROUP</h1>
-            <p className="text-sm text-muted">Controle de materiais de escritório</p>
+            <h1 className="font-serif text-2xl font-semibold text-white">Estoque CFFGROUP</h1>
+            <p className="text-sm text-white/60">Controle de materiais de escritório</p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="ghost" onClick={onNewMaterial}>
+          <ThemeToggle />
+          <Button variant="ghostOnDark" onClick={onNewMaterial}>
             <IconPlus className="h-4 w-4" />
             Novo material
           </Button>
