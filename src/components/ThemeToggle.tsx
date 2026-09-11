@@ -45,7 +45,7 @@ export function ThemeToggle() {
   }
 
   return (
-    <div className="flex gap-0.5 rounded-[10px] border border-white/15 bg-white/5 p-0.5">
+    <div className="flex flex-col items-center gap-0.5 rounded-[10px] border border-white/15 bg-white/5 p-0.5">
       {OPTIONS.map(({ mode: optionMode, label, icon: Icon }) => (
         <button
           key={optionMode}
