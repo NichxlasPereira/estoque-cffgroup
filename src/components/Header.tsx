@@ -16,8 +16,17 @@ interface HeaderProps {
 
 export function Header({ tab, onChangeTab, onNewMaterial, onNewWithdrawal }: HeaderProps) {
   return (
-    <header className="grid grid-cols-1 border-b border-border bg-surface lg:grid-cols-2">
-      <div className="flex flex-col gap-10 px-6 py-6 sm:px-10 sm:py-8 lg:py-10">
+    <header className="relative overflow-hidden border-b border-border bg-surface">
+      <Image
+        src="/hero-office.jpg"
+        alt="Equipe CFFGROUP em reunião estratégica"
+        fill
+        sizes="100vw"
+        className="object-cover opacity-30"
+        priority
+      />
+
+      <div className="relative mx-auto flex max-w-7xl flex-col gap-10 px-6 py-6 sm:px-10 sm:py-8 lg:py-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div
@@ -41,7 +50,7 @@ export function Header({ tab, onChangeTab, onNewMaterial, onNewWithdrawal }: Hea
 
         <Tabs active={tab} onChange={onChangeTab} />
 
-        <div className="relative flex flex-1 flex-col justify-center gap-6 pb-4">
+        <div className="relative flex flex-col gap-6 py-4">
           <DoodleScribble className="pointer-events-none absolute -left-6 -top-10 h-20 w-20 text-accent/50 sm:h-24 sm:w-24" />
 
           <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight text-ink sm:text-5xl">
@@ -64,17 +73,6 @@ export function Header({ tab, onChangeTab, onNewMaterial, onNewWithdrawal }: Hea
             </Button>
           </div>
         </div>
-      </div>
-
-      <div className="relative hidden overflow-hidden bg-[#111111] lg:block">
-        <Image
-          src="/hero-office.jpg"
-          alt="Equipe CFFGROUP em reunião estratégica"
-          fill
-          sizes="50vw"
-          className="object-cover"
-          priority
-        />
       </div>
     </header>
   );
