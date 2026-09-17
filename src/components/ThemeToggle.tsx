@@ -95,8 +95,8 @@ export function ThemeToggle() {
         aria-label="Escolher tema"
         aria-expanded={open}
         onClick={toggleOpen}
-        className={`rounded-[10px] border border-white/15 bg-white/5 p-2.5 text-white transition hover:bg-white/10 ${
-          open ? "bg-white/15" : ""
+        className={`rounded-full border border-border-strong p-2.5 text-ink transition hover:bg-surface-2 ${
+          open ? "bg-surface-2" : ""
         }`}
       >
         <CurrentIcon className="h-4 w-4" />
@@ -107,7 +107,7 @@ export function ThemeToggle() {
           <div
             ref={panelRef}
             style={{ top: position.top, right: position.right }}
-            className={`fixed z-50 flex origin-top-right flex-col gap-0.5 rounded-[10px] border border-white/15 bg-[#14152a] p-0.5 shadow-[0_12px_32px_rgba(0,0,0,0.45)] transition-all duration-150 ease-out ${
+            className={`fixed z-50 flex origin-top-right flex-col gap-0.5 rounded-[10px] border border-border bg-surface p-0.5 shadow-[0_12px_32px_rgba(0,0,0,0.25)] transition-all duration-150 ease-out ${
               open
                 ? "translate-y-0 scale-100 opacity-100"
                 : "pointer-events-none -translate-y-1 scale-95 opacity-0"
@@ -123,8 +123,8 @@ export function ThemeToggle() {
                 onClick={() => selectMode(optionMode)}
                 className={`rounded-[8px] p-2 transition ${
                   mode === optionMode
-                    ? "bg-white/15 text-white"
-                    : "text-white/60 hover:bg-white/10 hover:text-white"
+                    ? "bg-surface-2 text-ink"
+                    : "text-muted hover:bg-surface-2 hover:text-ink"
                 }`}
               >
                 <Icon className="h-4 w-4" />

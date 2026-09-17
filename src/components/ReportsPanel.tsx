@@ -99,7 +99,7 @@ function HighlightCard({
         <p className="text-sm text-muted">{label}</p>
         {ranking ? (
           <>
-            <p className="truncate font-serif text-lg font-semibold text-ink">{ranking.name}</p>
+            <p className="truncate font-display text-lg font-semibold text-ink">{ranking.name}</p>
             <p className="font-mono text-sm tabular-nums text-muted">
               {isCost ? formatBRL(ranking.cost) : `${formatQuantity(ranking.quantity)} ${suffix ?? ""}`}
             </p>
@@ -117,7 +117,7 @@ function BreakdownCard({ title, buckets }: { title: string; buckets: CountBucket
 
   return (
     <div className="rounded-[14px] border border-border bg-surface p-5">
-      <h3 className="mb-4 font-serif text-lg font-semibold text-ink">{title}</h3>
+      <h3 className="mb-4 font-display text-lg font-semibold text-ink">{title}</h3>
       {!hasData ? (
         <p className="text-sm text-muted">Sem dados suficientes.</p>
       ) : (

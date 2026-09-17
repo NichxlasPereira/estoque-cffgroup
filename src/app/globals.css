@@ -2,17 +2,17 @@
 
 :root,
 [data-theme="dark"] {
-  --bg: #0b0c18;
-  --surface: #14152a;
-  --surface-2: #1c1d3a;
-  --border: #292a4c;
-  --border-strong: #3c3e6c;
-  --ink: #f2f0fb;
-  --muted: #9997bd;
+  --bg: #0d0d0d;
+  --surface: #171717;
+  --surface-2: #212121;
+  --border: #2c2c2c;
+  --border-strong: #454545;
+  --ink: #f4f3f1;
+  --muted: #9a9994;
   --accent: #7c5cf0;
   --accent-strong: #b7a6fb;
-  --accent-ink: #fbfaff;
-  --accent-soft: #221c44;
+  --accent-ink: #ffffff;
+  --accent-soft: #241f38;
   --ok: #3ddc97;
   --ok-soft: #12271f;
   --warn: #f2a93c;
@@ -30,13 +30,13 @@
 }
 
 [data-theme="light"] {
-  --bg: #f5f4fb;
+  --bg: #f4f3f1;
   --surface: #ffffff;
-  --surface-2: #f1eff9;
-  --border: #e3e1f0;
-  --border-strong: #c9c6e8;
-  --ink: #1c1d3a;
-  --muted: #6b6890;
+  --surface-2: #ececea;
+  --border: #dedcd8;
+  --border-strong: #b8b6b1;
+  --ink: #111111;
+  --muted: #6b6a67;
   --accent: #7c5cf0;
   --accent-strong: #5b3fd6;
   --accent-ink: #ffffff;
@@ -76,7 +76,7 @@
   --color-critical: var(--critical);
   --color-critical-soft: var(--critical-soft);
 
-  --font-serif: var(--font-fraunces);
+  --font-display: var(--font-space-grotesk);
   --font-sans: var(--font-manrope);
   --font-mono: var(--font-jetbrains-mono);
 }
@@ -99,7 +99,6 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* thin, subtle scrollbars to match the dark panel look */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

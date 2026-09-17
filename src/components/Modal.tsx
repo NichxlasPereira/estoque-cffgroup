@@ -42,7 +42,7 @@ export function Modal({ open, onClose, title, children, footer, maxWidthClassNam
         className={`relative w-full ${maxWidthClassName} max-h-[85vh] flex flex-col rounded-[16px] border border-border bg-surface shadow-[0_24px_64px_rgba(0,0,0,0.55)]`}
       >
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 id="modal-title" className="font-serif text-xl font-semibold text-ink">
+          <h2 id="modal-title" className="font-display text-xl font-semibold text-ink">
             {title}
           </h2>
           <button

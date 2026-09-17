@@ -8,23 +8,23 @@ interface TabsProps {
 }
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "estoque", label: "Estoque" },
-  { key: "historico", label: "Histórico de retiradas" },
-  { key: "relatorios", label: "Relatórios" },
+  { key: "estoque", label: "estoque" },
+  { key: "historico", label: "histórico" },
+  { key: "relatorios", label: "relatórios" },
 ];
 
 export function Tabs({ active, onChange }: TabsProps) {
   return (
-    <div className="flex gap-1 rounded-[12px] border border-border bg-surface p-1">
+    <div className="flex gap-6 border-b border-border sm:gap-8">
       {TABS.map((tab) => (
         <button
           key={tab.key}
           type="button"
           onClick={() => onChange(tab.key)}
-          className={`rounded-[9px] px-4 py-2 text-sm font-semibold transition ${
+          className={`-mb-px border-b-2 pb-3 text-sm transition ${
             active === tab.key
-              ? "bg-accent-soft text-accent-strong"
-              : "text-muted hover:text-ink"
+              ? "border-ink font-bold text-ink"
+              : "border-transparent font-medium text-muted hover:text-ink"
           }`}
         >
           {tab.label}
