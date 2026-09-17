@@ -93,6 +93,14 @@ export function IconChevronDown({ className }: IconProps) {
   );
 }
 
+export function IconChevronRight({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth={base} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function IconBox({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">

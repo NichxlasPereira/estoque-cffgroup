@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { Header } from "@/components/Header";
 import { StatsCards } from "@/components/StatsCards";
 import { SeedBanner } from "@/components/SeedBanner";
-import { Tabs, TabKey } from "@/components/Tabs";
+import { TabKey } from "@/components/Tabs";
 import { MaterialsTable } from "@/components/MaterialsTable";
 import { WithdrawalsTable } from "@/components/WithdrawalsTable";
 import { ReportsPanel } from "@/components/ReportsPanel";
@@ -175,7 +175,12 @@ export default function Home() {
 
   return (
     <>
-      <Header onNewMaterial={openNewMaterial} onNewWithdrawal={() => openWithdrawal(null)} />
+      <Header
+        tab={tab}
+        onChangeTab={setTab}
+        onNewMaterial={openNewMaterial}
+        onNewWithdrawal={() => openWithdrawal(null)}
+      />
 
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-6 py-8">
         <SeedBanner />
@@ -186,8 +191,6 @@ export default function Home() {
           outOfStock={stats.outOfStock}
           withdrawalsLast7Days={stats.withdrawalsLast7Days}
         />
-
-        <Tabs active={tab} onChange={setTab} />
 
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
           <SearchPanel
