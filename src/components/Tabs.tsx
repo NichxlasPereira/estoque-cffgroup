@@ -1,6 +1,6 @@
 "use client";
 
-export type TabKey = "estoque" | "historico";
+export type TabKey = "estoque" | "historico" | "relatorios";
 
 interface TabsProps {
   active: TabKey;
@@ -10,6 +10,7 @@ interface TabsProps {
 const TABS: { key: TabKey; label: string }[] = [
   { key: "estoque", label: "Estoque" },
   { key: "historico", label: "Histórico de retiradas" },
+  { key: "relatorios", label: "Relatórios" },
 ];
 
 export function Tabs({ active, onChange }: TabsProps) {

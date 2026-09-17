@@ -8,6 +8,7 @@ import { SeedBanner } from "@/components/SeedBanner";
 import { Tabs, TabKey } from "@/components/Tabs";
 import { MaterialsTable } from "@/components/MaterialsTable";
 import { WithdrawalsTable } from "@/components/WithdrawalsTable";
+import { ReportsPanel } from "@/components/ReportsPanel";
 import { MaterialModal, MaterialFormValues } from "@/components/MaterialModal";
 import { WithdrawalModal, WithdrawalFormValues } from "@/components/WithdrawalModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
@@ -188,8 +189,10 @@ export default function Home() {
             onEdit={openEditMaterial}
             onDelete={setDeletingMaterial}
           />
-        ) : (
+        ) : tab === "historico" ? (
           <WithdrawalsTable withdrawals={withdrawals} />
+        ) : (
+          <ReportsPanel materials={materials} withdrawals={withdrawals} />
         )}
       </main>
 
