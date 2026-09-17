@@ -1,10 +1,10 @@
 "use client";
 
-import { IconArrowDownTray, IconChevronRight, IconPlus } from "./icons";
+import Image from "next/image";
+import { IconArrowDownTray, IconPlus } from "./icons";
 import { Button } from "./Button";
 import { ThemeToggle } from "./ThemeToggle";
 import { DoodleScribble } from "./DoodleScribble";
-import { DoodleSquiggle } from "./DoodleSquiggle";
 import { Tabs, TabKey } from "./Tabs";
 
 interface HeaderProps {
@@ -67,28 +67,14 @@ export function Header({ tab, onChangeTab, onNewMaterial, onNewWithdrawal }: Hea
       </div>
 
       <div className="relative hidden overflow-hidden bg-[#111111] lg:block">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.15]"
-          style={{
-            backgroundImage:
-              "radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-          aria-hidden="true"
+        <Image
+          src="/warehouse.jpg"
+          alt="Almoxarifado organizado da CFFGROUP"
+          fill
+          sizes="50vw"
+          className="object-cover"
+          priority
         />
-        <span
-          className="pointer-events-none absolute -bottom-16 -right-10 select-none font-display text-[280px] font-bold leading-none text-white/[0.06]"
-          aria-hidden="true"
-        >
-          C
-        </span>
-        <DoodleSquiggle className="pointer-events-none absolute right-10 top-12 h-32 w-52 text-accent-strong/70" />
-
-        <div className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2">
-          <div className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-white text-[#111111] shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
-            <IconChevronRight className="h-5 w-5" />
-          </div>
-        </div>
       </div>
     </header>
   );
