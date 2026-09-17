@@ -45,6 +45,10 @@ export function Header({ tab, onChangeTab, onNewMaterial, onNewWithdrawal }: Hea
               <IconPlus className="h-3.5 w-3.5" />
               Novo material
             </Button>
+            <Button variant="dark" onClick={onNewWithdrawal} className="!px-4 !py-2 text-xs">
+              <IconArrowDownTray className="h-3.5 w-3.5" />
+              registrar retirada
+            </Button>
           </div>
         </div>
 
@@ -65,13 +69,6 @@ export function Header({ tab, onChangeTab, onNewMaterial, onNewWithdrawal }: Hea
             Cadastre materiais, registre retiradas e acompanhe o estoque da CFFGROUP em um só
             lugar, sempre atualizado para toda a equipe.
           </p>
-
-          <div>
-            <Button variant="dark" onClick={onNewWithdrawal}>
-              <IconArrowDownTray className="h-4 w-4" />
-              registrar retirada
-            </Button>
-          </div>
         </div>
       </div>
     </header>
