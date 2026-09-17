@@ -29,8 +29,8 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Public static assets are excluded so Next's image optimizer (and direct
-  // requests) can fetch them without hitting the auth wall — see warehouse.jpg,
+  // requests) can fetch them without hitting the auth wall — see hero-office.jpg,
   // whose /_next/image request otherwise 400s because that internal fetch
   // carries no Basic Auth credentials.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|warehouse.jpg).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|hero-office.jpg).*)"],
 };

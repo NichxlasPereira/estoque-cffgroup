@@ -68,8 +68,8 @@ export function Header({ tab, onChangeTab, onNewMaterial, onNewWithdrawal }: Hea
 
       <div className="relative hidden overflow-hidden bg-[#111111] lg:block">
         <Image
-          src="/warehouse.jpg"
-          alt="Almoxarifado organizado da CFFGROUP"
+          src="/hero-office.jpg"
+          alt="Equipe CFFGROUP em reunião estratégica"
           fill
           sizes="50vw"
           className="object-cover"
