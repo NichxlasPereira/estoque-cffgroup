@@ -1,33 +1,34 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Material } from "@/lib/types";
 import { getStockStatus } from "@/lib/types";
 import { formatBRL, formatQuantity } from "@/lib/format";
 import { CategoryTag } from "./CategoryTag";
 import { StatusBadge } from "./StatusBadge";
 import { StockBar } from "./StockBar";
-import { IconArrowDownTray, IconCart, IconEdit, IconSearch, IconTrash, IconBox } from "./icons";
-
-type SortKey = "nome" | "estoque-asc" | "estoque-desc";
+import { MaterialSortKey } from "./SearchPanel";
+import { IconArrowDownTray, IconCart, IconEdit, IconTrash, IconBox } from "./icons";
 
 interface MaterialsTableProps {
   materials: Material[];
+  search: string;
+  category: string;
+  sort: MaterialSortKey;
   onWithdraw: (material: Material) => void;
   onEdit: (material: Material) => void;
   onDelete: (material: Material) => void;
 }
 
-export function MaterialsTable({ materials, onWithdraw, onEdit, onDelete }: MaterialsTableProps) {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [sort, setSort] = useState<SortKey>("nome");
-
-  const categories = useMemo(
-    () => Array.from(new Set(materials.map((m) => m.category))).sort((a, b) => a.localeCompare(b, "pt-BR")),
-    [materials]
-  );
-
+export function MaterialsTable({
+  materials,
+  search,
+  category,
+  sort,
+  onWithdraw,
+  onEdit,
+  onDelete,
+}: MaterialsTableProps) {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     let list = materials.filter((m) => {
@@ -51,41 +52,6 @@ export function MaterialsTable({ materials, onWithdraw, onEdit, onDelete }: Mate
 
   return (
     <div className="rounded-[14px] border border-border bg-surface">
-      <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, fornecedor ou local"
-            className="w-full rounded-[10px] border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
-          />
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
-          >
-            <option value="">Todas as categorias</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
-            className="rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
-          >
-            <option value="nome">Nome (A-Z)</option>
-            <option value="estoque-asc">Estoque (crescente)</option>
-            <option value="estoque-desc">Estoque (decrescente)</option>
-          </select>
-        </div>
-      </div>
-
       {filtered.length === 0 ? (
         <EmptyState hasMaterials={materials.length > 0} />
       ) : (

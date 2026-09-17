@@ -9,6 +9,7 @@ import { Tabs, TabKey } from "@/components/Tabs";
 import { MaterialsTable } from "@/components/MaterialsTable";
 import { WithdrawalsTable } from "@/components/WithdrawalsTable";
 import { ReportsPanel } from "@/components/ReportsPanel";
+import { SearchPanel, MaterialSortKey } from "@/components/SearchPanel";
 import { MaterialModal, MaterialFormValues } from "@/components/MaterialModal";
 import { WithdrawalModal, WithdrawalFormValues } from "@/components/WithdrawalModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
@@ -19,6 +20,11 @@ export default function Home() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>("estoque");
+
+  const [materialSearch, setMaterialSearch] = useState("");
+  const [materialCategory, setMaterialCategory] = useState("");
+  const [materialSort, setMaterialSort] = useState<MaterialSortKey>("nome");
+  const [historySearch, setHistorySearch] = useState("");
 
   const [materialModalOpen, setMaterialModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
@@ -65,6 +71,11 @@ export default function Home() {
   const existingCategories = useMemo(
     () => Array.from(new Set(materials.map((m) => m.category))),
     [materials]
+  );
+
+  const sortedCategories = useMemo(
+    () => [...existingCategories].sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [existingCategories]
   );
 
   function openNewMaterial() {
@@ -178,22 +189,42 @@ export default function Home() {
 
         <Tabs active={tab} onChange={setTab} />
 
-        {loading ? (
-          <div className="rounded-[14px] border border-border bg-surface px-6 py-16 text-center text-sm text-muted">
-            Carregando...
-          </div>
-        ) : tab === "estoque" ? (
-          <MaterialsTable
-            materials={materials}
-            onWithdraw={(m) => openWithdrawal(m)}
-            onEdit={openEditMaterial}
-            onDelete={setDeletingMaterial}
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <SearchPanel
+            tab={tab}
+            categories={sortedCategories}
+            materialSearch={materialSearch}
+            onMaterialSearchChange={setMaterialSearch}
+            materialCategory={materialCategory}
+            onMaterialCategoryChange={setMaterialCategory}
+            materialSort={materialSort}
+            onMaterialSortChange={setMaterialSort}
+            historySearch={historySearch}
+            onHistorySearchChange={setHistorySearch}
           />
-        ) : tab === "historico" ? (
-          <WithdrawalsTable withdrawals={withdrawals} />
-        ) : (
-          <ReportsPanel materials={materials} withdrawals={withdrawals} />
-        )}
+
+          <div className="min-w-0 flex-1">
+            {loading ? (
+              <div className="rounded-[14px] border border-border bg-surface px-6 py-16 text-center text-sm text-muted">
+                Carregando...
+              </div>
+            ) : tab === "estoque" ? (
+              <MaterialsTable
+                materials={materials}
+                search={materialSearch}
+                category={materialCategory}
+                sort={materialSort}
+                onWithdraw={(m) => openWithdrawal(m)}
+                onEdit={openEditMaterial}
+                onDelete={setDeletingMaterial}
+              />
+            ) : tab === "historico" ? (
+              <WithdrawalsTable withdrawals={withdrawals} search={historySearch} />
+            ) : (
+              <ReportsPanel materials={materials} withdrawals={withdrawals} />
+            )}
+          </div>
+        </div>
       </main>
 
       <MaterialModal

@@ -1,18 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Withdrawal } from "@/lib/types";
 import { formatDateBR, formatQuantity } from "@/lib/format";
 import { CategoryTag } from "./CategoryTag";
-import { IconArrowDownTray, IconSearch } from "./icons";
+import { IconArrowDownTray } from "./icons";
 
 interface WithdrawalsTableProps {
   withdrawals: Withdrawal[];
+  search: string;
 }
 
-export function WithdrawalsTable({ withdrawals }: WithdrawalsTableProps) {
-  const [search, setSearch] = useState("");
-
+export function WithdrawalsTable({ withdrawals, search }: WithdrawalsTableProps) {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     const list = !term
@@ -26,18 +25,6 @@ export function WithdrawalsTable({ withdrawals }: WithdrawalsTableProps) {
 
   return (
     <div className="rounded-[14px] border border-border bg-surface">
-      <div className="border-b border-border p-4">
-        <div className="relative w-full sm:max-w-xs">
-          <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por material ou responsável"
-            className="w-full rounded-[10px] border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none"
-          />
-        </div>
-      </div>
-
       {filtered.length === 0 ? (
         <EmptyState hasWithdrawals={withdrawals.length > 0} />
       ) : (
