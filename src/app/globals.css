@@ -19,6 +19,13 @@
   --warn-soft: #2b2013;
   --critical: #f2637c;
   --critical-soft: #2b1620;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
   color-scheme: dark;
 }
 
@@ -40,6 +47,13 @@
   --warn-soft: #fbf0dd;
   --critical: #d1425b;
   --critical-soft: #fbe7ea;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
   color-scheme: light;
 }
 

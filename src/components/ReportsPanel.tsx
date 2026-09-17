@@ -5,6 +5,7 @@ import { Material, Withdrawal } from "@/lib/types";
 import { buildReport, CountBucket, MaterialRanking } from "@/lib/reports";
 import { formatBRL, formatQuantity } from "@/lib/format";
 import { IconArrowDownTray, IconBox, IconInfo } from "./icons";
+import { DonutChart } from "./DonutChart";
 
 interface ReportsPanelProps {
   materials: Material[];
@@ -59,6 +60,12 @@ export function ReportsPanel({ materials, withdrawals }: ReportsPanelProps) {
         <BreakdownCard title="Retiradas por dia da semana" buckets={report.byWeekday} />
         <BreakdownCard title="Retiradas por mês" buckets={report.byMonth} />
       </div>
+
+      <p className="text-xs text-muted">
+        As parcelas mostram a proporção de retiradas (número de registros) em cada categoria — os
+        valores exatos estão sempre na legenda ao lado, já que ângulos próximos são difíceis de
+        comparar a olho.
+      </p>
     </div>
   );
 }
@@ -106,30 +113,18 @@ function HighlightCard({
 }
 
 function BreakdownCard({ title, buckets }: { title: string; buckets: CountBucket[] }) {
-  const max = Math.max(1, ...buckets.map((b) => b.count));
+  const hasData = buckets.some((b) => b.count > 0);
 
   return (
     <div className="rounded-[14px] border border-border bg-surface p-5">
       <h3 className="mb-4 font-serif text-lg font-semibold text-ink">{title}</h3>
-      {buckets.length === 0 ? (
+      {!hasData ? (
         <p className="text-sm text-muted">Sem dados suficientes.</p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {buckets.map((bucket) => (
-            <div key={bucket.label} className="flex items-center gap-3">
-              <span className="w-24 shrink-0 text-sm text-muted">{bucket.label}</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
-                <div
-                  className="h-full rounded-full bg-accent transition-all"
-                  style={{ width: `${(bucket.count / max) * 100}%` }}
-                />
-              </div>
-              <span className="w-8 shrink-0 text-right font-mono text-sm tabular-nums text-ink">
-                {bucket.count}
-              </span>
-            </div>
-          ))}
-        </div>
+        <DonutChart
+          data={buckets.map((b) => ({ label: b.label, value: b.count }))}
+          centerCaption="retiradas"
+        />
       )}
     </div>
   );
