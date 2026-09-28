@@ -48,6 +48,9 @@ model Employee {
   department String?
   role       String?
   active     Boolean  @default(true)
+  // Total de dias de folga a que o colaborador tem direito. O saldo restante
+  // é este total menos os dias já lançados como ocorrência do tipo "folga".
+  folgaAllowance Int  @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -65,19 +68,38 @@ model AttendanceOccurrence {
   employee           Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   employeeName       String
   employeeDepartment String?
-  type               String // "atraso" | "falta" | "atestado"
+  type               String // "atraso" | "falta" | "atestado" | "folga"
   date               DateTime
-  // Atestado: último dia coberto (inclusivo). Nos demais tipos é igual a `date`.
+  // Atestado e folga: último dia coberto (inclusivo). Nos demais tipos é igual a `date`.
   endDate            DateTime
   // Atraso: minutos de atraso.
   minutesLate        Int?
   // Falta: se foi justificada. Atestado é sempre justificado; atraso, conforme informado.
   justified          Boolean   @default(false)
+  // Folga: gestor que concedeu.
+  approvedBy         String?
   notes              String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
+  attachments AttendanceAttachment[]
+
   @@index([employeeId])
   @@index([date])
   @@index([type])
+}
+
+// Documento anexado a uma ocorrência (ex.: foto ou PDF do atestado). O arquivo
+// fica em disco, ao lado do banco (ver src/lib/attachmentStorage.ts).
+model AttendanceAttachment {
+  id           String               @id @default(cuid())
+  occurrenceId String
+  occurrence   AttendanceOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+  fileName     String
+  mimeType     String
+  size         Int
+  storedName   String               @unique
+  createdAt    DateTime             @default(now())
+
+  @@index([occurrenceId])
 }

@@ -43,3 +43,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# anexos de atestados (dados pessoais — nunca versionar)
+/prisma/atestados

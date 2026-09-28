@@ -32,7 +32,8 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
           b.faltas - a.faltas ||
           b.atrasos - a.atrasos ||
           b.minutesLate - a.minutesLate ||
-          b.diasAtestado - a.diasAtestado
+          b.diasAtestado - a.diasAtestado ||
+          b.diasFolga - a.diasFolga
       ),
     [occurrences, month]
   );
@@ -43,10 +44,11 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
   }));
 
   // Atrasos e faltas acontecem num dia só — o dia da semana diz algo sobre padrões.
+  // Atestados e folgas cobrem períodos e ficam de fora.
   const byWeekday = useMemo(() => {
     const counts = WEEKDAY_LABELS.map((label) => ({ label, value: 0 }));
     for (const o of inMonth) {
-      if (o.type === "atestado") continue;
+      if (o.type === "atestado" || o.type === "folga") continue;
       counts[new Date(o.date).getUTCDay()].value += 1;
     }
     return counts;
@@ -93,7 +95,7 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
         <IconInfo className="mt-0.5 h-5 w-5 shrink-0 text-accent-strong" />
         <p>
           {monthKeyLabel(month)}: {inMonth.length} {inMonth.length === 1 ? "ocorrência" : "ocorrências"} de{" "}
-          {ranking.length} {ranking.length === 1 ? "colaborador" : "colaboradores"}. Atestados que atravessam
+          {ranking.length} {ranking.length === 1 ? "colaborador" : "colaboradores"}. Atestados e folgas que atravessam
           meses contam só os dias que caem neste mês.
         </p>
       </div>
@@ -111,6 +113,7 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
                 <th className="px-4 py-3 text-right font-medium">Faltas</th>
                 <th className="px-4 py-3 text-right font-medium">Não justif.</th>
                 <th className="px-4 py-3 text-right font-medium">Dias de atestado</th>
+                <th className="px-4 py-3 text-right font-medium">Dias de folga</th>
               </tr>
             </thead>
             <tbody>
@@ -127,6 +130,7 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
                   <Num value={s.faltas} />
                   <Num value={s.faltasInjustificadas} highlight />
                   <Num value={s.diasAtestado} />
+                  <Num value={s.diasFolga} />
                 </tr>
               ))}
             </tbody>
@@ -142,7 +146,7 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
           {byWeekday.some((d) => d.value > 0) ? (
             <DonutChart data={byWeekday} centerCaption="atrasos e faltas" />
           ) : (
-            <p className="text-sm text-muted">Só há atestados neste mês.</p>
+            <p className="text-sm text-muted">Só há atestados e folgas neste mês.</p>
           )}
         </ChartCard>
         <ChartCard title="Ocorrências por setor">
@@ -156,6 +160,7 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
                 <th className="pb-2 text-right font-medium">Atrasos</th>
                 <th className="pb-2 text-right font-medium">Faltas</th>
                 <th className="pb-2 text-right font-medium">Dias atest.</th>
+                <th className="pb-2 text-right font-medium">Dias folga</th>
               </tr>
             </thead>
             <tbody>
@@ -165,6 +170,7 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
                   <td className="py-2 text-right font-mono tabular-nums text-ink">{h.atrasos}</td>
                   <td className="py-2 text-right font-mono tabular-nums text-ink">{h.faltas}</td>
                   <td className="py-2 text-right font-mono tabular-nums text-ink">{h.diasAtestado}</td>
+                  <td className="py-2 text-right font-mono tabular-nums text-ink">{h.diasFolga}</td>
                 </tr>
               ))}
             </tbody>

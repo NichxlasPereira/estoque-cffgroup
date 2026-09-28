@@ -11,7 +11,10 @@ export interface EmployeeFormValues {
   department: string;
   role: string;
   active: boolean;
+  folgaAllowance: string;
 }
+
+const EMPTY: EmployeeFormValues = { name: "", department: "", role: "", active: true, folgaAllowance: "0" };
 
 interface EmployeeModalProps {
   open: boolean;
@@ -22,8 +25,9 @@ interface EmployeeModalProps {
 }
 
 export function EmployeeModal({ open, onClose, onSubmit, employee, existingDepartments }: EmployeeModalProps) {
-  const [values, setValues] = useState<EmployeeFormValues>({ name: "", department: "", role: "", active: true });
+  const [values, setValues] = useState<EmployeeFormValues>(EMPTY);
   const [error, setError] = useState<string>();
+  const [allowanceError, setAllowanceError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -35,16 +39,23 @@ export function EmployeeModal({ open, onClose, onSubmit, employee, existingDepar
             department: employee.department ?? "",
             role: employee.role ?? "",
             active: employee.active,
+            folgaAllowance: String(employee.folgaAllowance),
           }
-        : { name: "", department: "", role: "", active: true }
+        : EMPTY
     );
     setError(undefined);
+    setAllowanceError(undefined);
   }, [open, employee]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!values.name.trim()) {
       setError("Informe o nome do colaborador.");
+      return;
+    }
+    const allowance = values.folgaAllowance.trim() === "" ? 0 : Number(values.folgaAllowance);
+    if (!Number.isInteger(allowance) || allowance < 0 || allowance > 365) {
+      setAllowanceError("Informe um número inteiro entre 0 e 365.");
       return;
     }
     setSubmitting(true);
@@ -105,6 +116,27 @@ export function EmployeeModal({ open, onClose, onSubmit, employee, existingDepar
             onChange={(e) => setValues((v) => ({ ...v, role: e.target.value }))}
             className={inputClass(false)}
             placeholder="Ex.: Analista"
+          />
+        </Field>
+
+        <Field
+          label="Folgas a que tem direito (dias)"
+          error={allowanceError}
+          hint="Total concedido. O saldo restante desconta as folgas já lançadas."
+          className="sm:col-span-2"
+        >
+          <input
+            type="number"
+            min={0}
+            max={365}
+            step={1}
+            value={values.folgaAllowance}
+            onChange={(e) => {
+              setValues((v) => ({ ...v, folgaAllowance: e.target.value }));
+              setAllowanceError(undefined);
+            }}
+            className={inputClass(!!allowanceError) + " font-mono tabular-nums sm:max-w-40"}
+            placeholder="0"
           />
         </Field>
 

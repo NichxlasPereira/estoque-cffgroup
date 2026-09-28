@@ -12,16 +12,19 @@ import { OccurrencesTable } from "@/components/attendance/OccurrencesTable";
 import { EmployeesTable } from "@/components/attendance/EmployeesTable";
 import { AttendanceReports } from "@/components/attendance/AttendanceReports";
 import { EmployeeModal, EmployeeFormValues } from "@/components/attendance/EmployeeModal";
-import { OccurrenceModal, OccurrenceFormValues } from "@/components/attendance/OccurrenceModal";
+import { AttachmentChanges, OccurrenceModal, OccurrenceFormValues } from "@/components/attendance/OccurrenceModal";
 import { ConfirmDeleteModal } from "@/components/attendance/ConfirmDeleteModal";
 import {
   Employee,
-  MonthTotals,
   OCCURRENCE_LABEL,
   Occurrence,
   OccurrenceType,
   availableMonths,
+  addTotals,
   currentMonthKey,
+  emptyTotals,
+  folgaDaysUsed,
+  isMultiDay,
   monthKeyLabel,
   occurrenceDays,
   overlapsMonth,
@@ -102,15 +105,10 @@ export default function FrequenciaPage() {
   );
 
   const totals = useMemo(() => {
-    const t: MonthTotals = { atrasos: 0, minutesLate: 0, faltas: 0, faltasInjustificadas: 0, atestados: 0, diasAtestado: 0 };
+    const t = emptyTotals();
     for (const s of periodSummaries) {
       if (department && s.department !== department) continue;
-      t.atrasos += s.atrasos;
-      t.minutesLate += s.minutesLate;
-      t.faltas += s.faltas;
-      t.faltasInjustificadas += s.faltasInjustificadas;
-      t.atestados += s.atestados;
-      t.diasAtestado += s.diasAtestado;
+      addTotals(t, s);
     }
     return t;
   }, [periodSummaries, department]);
@@ -121,6 +119,13 @@ export default function FrequenciaPage() {
     return map;
   }, [periodSummaries]);
 
+  // Saldo de folgas é acumulado (não por mês): total a que tem direito menos o já usado.
+  const folgaRemaining = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const e of employees) map.set(e.id, e.folgaAllowance - folgaDaysUsed(occurrences, e.id));
+    return map;
+  }, [employees, occurrences]);
+
   const filteredOccurrences = useMemo(() => {
     const term = search.trim().toLowerCase();
     return occurrences.filter(
@@ -128,7 +133,10 @@ export default function FrequenciaPage() {
         (allPeriod || overlapsMonth(o, month)) &&
         (!typeFilter || o.type === typeFilter) &&
         (!department || o.employeeDepartment === department) &&
-        (!term || o.employeeName.toLowerCase().includes(term) || (o.notes ?? "").toLowerCase().includes(term))
+        (!term ||
+          o.employeeName.toLowerCase().includes(term) ||
+          (o.notes ?? "").toLowerCase().includes(term) ||
+          (o.approvedBy ?? "").toLowerCase().includes(term))
     );
   }, [occurrences, month, allPeriod, typeFilter, department, search]);
 
@@ -172,6 +180,7 @@ export default function FrequenciaPage() {
             department: values.department.trim() || null,
             role: values.role.trim() || null,
             active: values.active,
+            folgaAllowance: Number(values.folgaAllowance || 0),
           }),
         },
         "Não foi possível salvar o colaborador."
@@ -196,10 +205,11 @@ export default function FrequenciaPage() {
     }
   }
 
-  async function handleOccurrenceSubmit(values: OccurrenceFormValues) {
+  async function handleOccurrenceSubmit(values: OccurrenceFormValues, attachments: AttachmentChanges) {
     const isEdit = !!editingOccurrence;
+    let saved: Occurrence;
     try {
-      await requestJson(
+      saved = await requestJson(
         isEdit ? `/api/occurrences/${editingOccurrence!.id}` : "/api/occurrences",
         {
           method: isEdit ? "PATCH" : "POST",
@@ -207,19 +217,45 @@ export default function FrequenciaPage() {
             employeeId: values.employeeId,
             type: values.type,
             date: values.date,
-            endDate: values.type === "atestado" ? values.endDate : values.date,
+            endDate: isMultiDay(values.type) ? values.endDate : values.date,
             minutesLate: values.type === "atraso" ? Number(values.minutesLate) : null,
             justified: values.justified,
+            approvedBy: values.type === "folga" ? values.approvedBy.trim() : null,
             notes: values.notes.trim() || null,
           }),
         },
         "Não foi possível salvar a ocorrência."
       );
-      await fetchOccurrences();
-      setOccurrenceModalOpen(false);
-      toast.success(isEdit ? "Ocorrência atualizada." : "Ocorrência registrada.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro inesperado.");
+      return;
+    }
+
+    // A ocorrência já está salva: falhas de anexo são avisadas sem desfazê-la.
+    const failures: string[] = [];
+    for (const id of attachments.removedIds) {
+      try {
+        await requestJson(`/api/attachments/${id}`, { method: "DELETE" }, "Não foi possível remover um anexo.");
+      } catch (err) {
+        failures.push(err instanceof Error ? err.message : "Não foi possível remover um anexo.");
+      }
+    }
+    for (const file of attachments.newFiles) {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/occurrences/${saved.id}/attachments`, { method: "POST", body: form });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        failures.push(`${file.name}: ${body.error || "não foi possível enviar."}`);
+      }
+    }
+
+    await fetchOccurrences();
+    setOccurrenceModalOpen(false);
+    if (failures.length > 0) {
+      toast.error(`Ocorrência salva, mas houve problema com anexos. ${failures.join(" ")}`, { duration: 8000 });
+    } else {
+      toast.success(isEdit ? "Ocorrência atualizada." : "Ocorrência registrada.");
     }
   }
 
@@ -236,7 +272,7 @@ export default function FrequenciaPage() {
   }
 
   function exportCsv() {
-    const header = ["Data inicial", "Data final", "Colaborador", "Setor", "Tipo", "Minutos de atraso", "Dias", "Justificada", "Observações"];
+    const header = ["Data inicial", "Data final", "Colaborador", "Setor", "Tipo", "Minutos de atraso", "Dias", "Justificada", "Gestor (folga)", "Anexos", "Observações"];
     const rows = filteredOccurrences.map((o) => [
       formatDateBR(o.date),
       formatDateBR(o.endDate),
@@ -246,6 +282,8 @@ export default function FrequenciaPage() {
       o.minutesLate !== null ? String(o.minutesLate) : "",
       String(occurrenceDays(o)),
       o.justified ? "Sim" : "Não",
+      o.approvedBy ?? "",
+      String(o.attachments.length),
       o.notes ?? "",
     ]);
     const escape = (v: string) => (/[";\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
@@ -335,6 +373,7 @@ export default function FrequenciaPage() {
                 employees={filteredEmployees}
                 hasAny={employees.length > 0}
                 summaries={summaryByEmployeeId}
+                folgaRemaining={folgaRemaining}
                 periodLabel={periodLabel}
                 onRegister={(e) => openNewOccurrence(e)}
                 onEdit={(e) => {
@@ -363,6 +402,7 @@ export default function FrequenciaPage() {
         onClose={() => setOccurrenceModalOpen(false)}
         onSubmit={handleOccurrenceSubmit}
         employees={employees}
+        occurrences={occurrences}
         occurrence={editingOccurrence}
         preselectedEmployee={occurrencePreselect}
       />

@@ -1,8 +1,8 @@
 "use client";
 
-import { Occurrence, formatMinutes, occurrenceDays } from "@/lib/attendance";
+import { Occurrence, formatMinutes, occurrenceDays, pluralDias } from "@/lib/attendance";
 import { formatDateBR } from "@/lib/format";
-import { IconCalendarPlus, IconEdit, IconTrash } from "../icons";
+import { IconCalendarPlus, IconEdit, IconPaperclip, IconTrash } from "../icons";
 import { ActionButton, EmptyState } from "./formControls";
 import { JustifiedBadge, OccurrenceBadge } from "./OccurrenceBadge";
 
@@ -66,10 +66,41 @@ export function OccurrencesTable({ occurrences, hasAny, onEdit, onDelete }: Occu
                         </div>
                       ) : o.type === "falta" ? (
                         <JustifiedBadge justified={o.justified} />
+                      ) : o.type === "folga" ? (
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="font-mono tabular-nums text-ink">{pluralDias(days)}</span>
+                          <span className="text-xs text-muted">por {o.approvedBy ?? "—"}</span>
+                        </div>
                       ) : (
-                        <span className="font-mono tabular-nums text-ink">
-                          {days} {days === 1 ? "dia" : "dias"}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="font-mono tabular-nums text-ink">
+                            {days} {days === 1 ? "dia" : "dias"}
+                          </span>
+                          {o.attachments.length === 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => onEdit(o)}
+                              className="flex items-center gap-1 text-xs text-warn hover:underline"
+                            >
+                              <IconPaperclip className="h-3.5 w-3.5" />
+                              sem documento
+                            </button>
+                          ) : (
+                            o.attachments.map((a) => (
+                              <a
+                                key={a.id}
+                                href={`/api/attachments/${a.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={a.fileName}
+                                className="flex max-w-[11rem] items-center gap-1 text-xs text-accent-strong hover:underline"
+                              >
+                                <IconPaperclip className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{a.fileName}</span>
+                              </a>
+                            ))
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="max-w-xs px-4 py-3 text-muted">
@@ -77,6 +108,11 @@ export function OccurrencesTable({ occurrences, hasAny, onEdit, onDelete }: Occu
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        {o.type === "atestado" && (
+                          <ActionButton label="Anexar documento" onClick={() => onEdit(o)}>
+                            <IconPaperclip className="h-4 w-4" />
+                          </ActionButton>
+                        )}
                         <ActionButton label="Editar" onClick={() => onEdit(o)}>
                           <IconEdit className="h-4 w-4" />
                         </ActionButton>
