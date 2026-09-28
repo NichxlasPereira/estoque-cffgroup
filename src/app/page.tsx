@@ -5,7 +5,9 @@ import toast from "react-hot-toast";
 import { Header } from "@/components/Header";
 import { StatsCards } from "@/components/StatsCards";
 import { SeedBanner } from "@/components/SeedBanner";
-import { TabKey } from "@/components/Tabs";
+import { Tabs, TabKey, STOCK_TABS } from "@/components/Tabs";
+import { Button } from "@/components/Button";
+import { IconArrowDownTray, IconPlus } from "@/components/icons";
 import { MaterialsTable } from "@/components/MaterialsTable";
 import { WithdrawalsTable } from "@/components/WithdrawalsTable";
 import { ReportsPanel } from "@/components/ReportsPanel";
@@ -176,10 +178,30 @@ export default function Home() {
   return (
     <>
       <Header
-        tab={tab}
-        onChangeTab={setTab}
-        onNewMaterial={openNewMaterial}
-        onNewWithdrawal={() => openWithdrawal(null)}
+        module="estoque"
+        title={
+          <>
+            controle que
+            <br />
+            não deixa nada
+            <br />
+            faltar —
+          </>
+        }
+        description="Cadastre materiais, registre retiradas e acompanhe o estoque da CFFGROUP em um só lugar, sempre atualizado para toda a equipe."
+        actions={
+          <>
+            <Button variant="ghost" onClick={openNewMaterial} className="!px-4 !py-2 text-xs">
+              <IconPlus className="h-3.5 w-3.5" />
+              Novo material
+            </Button>
+            <Button variant="dark" onClick={() => openWithdrawal(null)} className="!px-4 !py-2 text-xs">
+              <IconArrowDownTray className="h-3.5 w-3.5" />
+              registrar retirada
+            </Button>
+          </>
+        }
+        tabs={<Tabs tabs={STOCK_TABS} active={tab} onChange={setTab} />}
       />
 
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-6 py-8">

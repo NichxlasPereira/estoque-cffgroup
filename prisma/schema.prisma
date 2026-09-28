@@ -41,3 +41,43 @@ model Withdrawal {
   @@index([materialId])
   @@index([timestamp])
 }
+
+model Employee {
+  id         String   @id @default(cuid())
+  name       String
+  department String?
+  role       String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  occurrences AttendanceOccurrence[]
+
+  @@index([name])
+}
+
+// Ocorrência de frequência: atraso, falta ou atestado. Guarda uma cópia do
+// nome/setor do colaborador (como Withdrawal faz com o material) para o
+// histórico continuar legível mesmo após a exclusão do cadastro.
+model AttendanceOccurrence {
+  id                 String    @id @default(cuid())
+  employeeId         String?
+  employee           Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  employeeName       String
+  employeeDepartment String?
+  type               String // "atraso" | "falta" | "atestado"
+  date               DateTime
+  // Atestado: último dia coberto (inclusivo). Nos demais tipos é igual a `date`.
+  endDate            DateTime
+  // Atraso: minutos de atraso.
+  minutesLate        Int?
+  // Falta: se foi justificada. Atestado é sempre justificado; atraso, conforme informado.
+  justified          Boolean   @default(false)
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([employeeId])
+  @@index([date])
+  @@index([type])
+}

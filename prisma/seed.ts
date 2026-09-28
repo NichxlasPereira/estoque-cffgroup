@@ -214,6 +214,55 @@ async function main() {
     }),
   ]);
 
+  // Frequência: só entra junto com o seed inicial (banco novo), para nunca
+  // misturar colaboradores fictícios com um cadastro real já existente.
+  if ((await prisma.employee.count()) === 0) {
+    const [mariana, joao, fernanda, carlos] = await prisma.$transaction([
+      prisma.employee.create({ data: { name: "Mariana Souza", department: "Administrativo", role: "Assistente" } }),
+      prisma.employee.create({ data: { name: "João Pedro", department: "Comercial", role: "Vendedor" } }),
+      prisma.employee.create({ data: { name: "Fernanda Lima", department: "Financeiro", role: "Analista" } }),
+      prisma.employee.create({ data: { name: "Carlos Eduardo", department: "TI", role: "Suporte" } }),
+    ]);
+
+    const snapshot = (e: { id: string; name: string; department: string | null }) => ({
+      employeeId: e.id,
+      employeeName: e.name,
+      employeeDepartment: e.department,
+    });
+
+    await prisma.$transaction([
+      prisma.attendanceOccurrence.create({
+        data: { ...snapshot(joao), type: "atraso", date: daysAgo(1), endDate: daysAgo(1), minutesLate: 20, notes: "Trânsito" },
+      }),
+      prisma.attendanceOccurrence.create({
+        data: { ...snapshot(joao), type: "atraso", date: daysAgo(4), endDate: daysAgo(4), minutesLate: 10 },
+      }),
+      prisma.attendanceOccurrence.create({
+        data: { ...snapshot(mariana), type: "falta", date: daysAgo(3), endDate: daysAgo(3), justified: false },
+      }),
+      prisma.attendanceOccurrence.create({
+        data: {
+          ...snapshot(fernanda),
+          type: "atestado",
+          date: daysAgo(8),
+          endDate: daysAgo(6),
+          justified: true,
+          notes: "Atestado entregue ao RH",
+        },
+      }),
+      prisma.attendanceOccurrence.create({
+        data: {
+          ...snapshot(carlos),
+          type: "falta",
+          date: daysAgo(10),
+          endDate: daysAgo(10),
+          justified: true,
+          notes: "Declaração de comparecimento em cartório",
+        },
+      }),
+    ]);
+  }
+
   console.log("Seed concluído com sucesso.");
 }
 

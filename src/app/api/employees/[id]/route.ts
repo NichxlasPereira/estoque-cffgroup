@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { validateEmployeeInput } from "@/lib/attendanceValidation";
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const body = await request.json().catch(() => null);
+  const result = validateEmployeeInput(body);
+  if ("error" in result) {
+    return NextResponse.json({ error: result.error }, { status: 400 });
+  }
+
+  const existing = await prisma.employee.findUnique({ where: { id } });
+  if (!existing) {
+    return NextResponse.json({ error: "Colaborador não encontrado." }, { status: 404 });
+  }
+
+  // Mantém a cópia de nome/setor das ocorrências em dia com o cadastro.
+  const employee = await prisma.$transaction(async (tx) => {
+    const updated = await tx.employee.update({ where: { id }, data: result.data });
+    await tx.attendanceOccurrence.updateMany({
+      where: { employeeId: id },
+      data: { employeeName: updated.name, employeeDepartment: updated.department },
+    });
+    return updated;
+  });
+  return NextResponse.json(employee);
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  const existing = await prisma.employee.findUnique({ where: { id } });
+  if (!existing) {
+    return NextResponse.json({ error: "Colaborador não encontrado." }, { status: 404 });
+  }
+
+  await prisma.employee.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}
