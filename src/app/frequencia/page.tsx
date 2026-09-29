@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Header } from "@/components/Header";
 import { Tabs, TabItem } from "@/components/Tabs";
@@ -38,11 +39,19 @@ const ATTENDANCE_TABS: TabItem<AttendanceTabKey>[] = [
   { key: "relatorios", label: "relatórios" },
 ];
 
+/** Sessão da frequência expirou (12h): volta para a tela de senha. */
+function sessionExpired(res: Response): boolean {
+  if (res.status !== 401) return false;
+  window.location.replace(`/frequencia/entrar?voltar=${encodeURIComponent("/frequencia")}`);
+  return true;
+}
+
 async function requestJson(url: string, init: RequestInit, fallbackError: string) {
   const res = await fetch(url, {
     ...init,
     headers: init.body ? { "Content-Type": "application/json" } : undefined,
   });
+  if (sessionExpired(res)) throw new Error("Sessão expirada. Entre novamente.");
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || fallbackError);
@@ -51,6 +60,7 @@ async function requestJson(url: string, init: RequestInit, fallbackError: string
 }
 
 export default function FrequenciaPage() {
+  const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,11 +83,13 @@ export default function FrequenciaPage() {
 
   const fetchEmployees = useCallback(async () => {
     const res = await fetch("/api/employees");
+    if (sessionExpired(res)) return;
     setEmployees(await res.json());
   }, []);
 
   const fetchOccurrences = useCallback(async () => {
     const res = await fetch("/api/occurrences");
+    if (sessionExpired(res)) return;
     setOccurrences(await res.json());
   }, []);
 
@@ -271,6 +283,11 @@ export default function FrequenciaPage() {
     }
   }
 
+  async function logout() {
+    await fetch("/api/frequencia/logout", { method: "POST" }).catch(() => undefined);
+    router.push("/");
+  }
+
   function exportCsv() {
     const header = ["Data inicial", "Data final", "Colaborador", "Setor", "Tipo", "Minutos de atraso", "Dias", "Justificada", "Gestor (folga)", "Anexos", "Observações"];
     const rows = filteredOccurrences.map((o) => [
@@ -321,6 +338,13 @@ export default function FrequenciaPage() {
               <IconCalendarPlus className="h-3.5 w-3.5" />
               registrar ocorrência
             </Button>
+            <button
+              type="button"
+              onClick={logout}
+              className="text-xs font-semibold text-muted underline-offset-2 transition hover:text-ink hover:underline"
+            >
+              sair
+            </button>
           </>
         }
         tabs={<Tabs tabs={ATTENDANCE_TABS} active={tab} onChange={setTab} />}

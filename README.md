@@ -29,6 +29,15 @@ Na primeira execução, o banco de dados é criado automaticamente (migração d
 - `npm run start` — inicia o servidor em modo produção (após `build`).
 - `npm run lint` — roda o ESLint.
 
+## Senha do módulo de frequência
+
+Além da autenticação geral do site (`BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`), a frequência — que tem dados de RH e atestados — pede uma senha própria, definida na variável de ambiente `FREQUENCIA_PASSWORD`. O estoque continua acessível para todos.
+
+- **Produção (Railway):** em *Variables* do serviço, crie `FREQUENCIA_PASSWORD` com a senha desejada. O Railway reinicia o serviço sozinho.
+- **Local:** adicione `FREQUENCIA_PASSWORD="sua-senha"` ao arquivo `.env` e reinicie o `npm run dev`.
+
+Sem a variável, o módulo fica **bloqueado** (a tela de senha avisa que ela não foi configurada). A sessão dura 12 horas; trocar a senha encerra todas as sessões abertas. O link "sair", no topo da frequência, encerra a sessão na hora.
+
 ## Modelo de dados
 
 - **Material**: nome, categoria, unidade, quantidade, estoque mínimo, local, fornecedor, preço e link de compra.
