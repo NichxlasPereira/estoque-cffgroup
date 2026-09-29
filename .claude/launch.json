@@ -3,9 +3,7 @@
   "configurations": [
     {
       "name": "estoque-cffgroup",
-      "runtimeExecutable": "/Users/nicholas/Documents/Projeto Estoque/scripts/dev.sh",
-      "runtimeArgs": [],
-      "port": 3000
+      "url": "http://localhost:3000"
     }
   ]
 }
