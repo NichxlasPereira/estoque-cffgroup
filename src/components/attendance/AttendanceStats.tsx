@@ -1,5 +1,5 @@
-import { MonthTotals, formatMinutes } from "@/lib/attendance";
-import { IconClock, IconMedical, IconUsers, IconUserX } from "../icons";
+import { MonthTotals, formatMinutes, pluralDias } from "@/lib/attendance";
+import { IconCalendarPlus, IconClock, IconMedical, IconUsers, IconUserX } from "../icons";
 
 interface AttendanceStatsProps {
   activeEmployees: number;
@@ -47,10 +47,18 @@ export function AttendanceStats({ activeEmployees, totals, periodLabel }: Attend
       accent: "text-accent-strong",
       iconBg: "bg-accent-soft",
     },
+    {
+      label: "Folgas",
+      value: String(totals.folgas),
+      detail: totals.diasFolga > 0 ? `${pluralDias(totals.diasFolga)} concedidos` : periodLabel,
+      icon: IconCalendarPlus,
+      accent: "text-ok",
+      iconBg: "bg-ok-soft",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {cards.map((card) => (
         <div
           key={card.label}

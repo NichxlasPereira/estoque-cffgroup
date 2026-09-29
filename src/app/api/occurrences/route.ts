@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateOccurrenceInput } from "@/lib/attendanceValidation";
+import { checkFolgaBalance } from "@/lib/folgaBalance";
 
 export async function GET() {
   const occurrences = await prisma.attendanceOccurrence.findMany({
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    include: {
+      attachments: {
+        select: { id: true, fileName: true, mimeType: true, size: true, createdAt: true },
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
   return NextResponse.json(occurrences);
 }
@@ -21,12 +28,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Colaborador não encontrado." }, { status: 404 });
   }
 
-  const occurrence = await prisma.attendanceOccurrence.create({
-    data: {
-      ...result.data,
-      employeeName: employee.name,
-      employeeDepartment: employee.department,
-    },
+  const input = result.data;
+  const outcome = await prisma.$transaction(async (tx) => {
+    const balanceError = await checkFolgaBalance(tx, input, employee.folgaAllowance);
+    if (balanceError) return { error: balanceError };
+    const occurrence = await tx.attendanceOccurrence.create({
+      data: {
+        ...input,
+        employeeName: employee.name,
+        employeeDepartment: employee.department,
+      },
+    });
+    return { occurrence };
   });
-  return NextResponse.json(occurrence, { status: 201 });
+  if ("error" in outcome) {
+    return NextResponse.json({ error: outcome.error }, { status: 409 });
+  }
+  return NextResponse.json(outcome.occurrence, { status: 201 });
 }

@@ -1,12 +1,18 @@
-export type OccurrenceType = "atraso" | "falta" | "atestado";
+export type OccurrenceType = "atraso" | "falta" | "atestado" | "folga";
 
-export const OCCURRENCE_TYPES: OccurrenceType[] = ["atraso", "falta", "atestado"];
+export const OCCURRENCE_TYPES: OccurrenceType[] = ["atraso", "falta", "atestado", "folga"];
 
 export const OCCURRENCE_LABEL: Record<OccurrenceType, string> = {
   atraso: "Atraso",
   falta: "Falta",
   atestado: "Atestado",
+  folga: "Folga",
 };
+
+/** Tipos que cobrem um período (data inicial e final). */
+export function isMultiDay(type: OccurrenceType): boolean {
+  return type === "atestado" || type === "folga";
+}
 
 export const DEPARTAMENTOS_SUGERIDOS = [
   "Administrativo",
@@ -24,8 +30,25 @@ export interface Employee {
   department: string | null;
   role: string | null;
   active: boolean;
+  folgaAllowance: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Attachment {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+}
+
+export const MAX_ATTACHMENT_MB = 10;
+export const ATTACHMENT_ACCEPT = "application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
+
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
 }
 
 export interface Occurrence {
@@ -38,7 +61,9 @@ export interface Occurrence {
   endDate: string;
   minutesLate: number | null;
   justified: boolean;
+  approvedBy: string | null;
   notes: string | null;
+  attachments: Attachment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -116,6 +141,8 @@ export interface EmployeeSummary {
   faltasInjustificadas: number;
   atestados: number;
   diasAtestado: number;
+  folgas: number;
+  diasFolga: number;
 }
 
 /** Totais por colaborador. Com `month`, considera só o que cai naquele mês. */
@@ -138,6 +165,8 @@ export function summarizeByEmployee(occurrences: Occurrence[], month?: string): 
         faltasInjustificadas: 0,
         atestados: 0,
         diasAtestado: 0,
+        folgas: 0,
+        diasFolga: 0,
       };
       map.set(key, s);
     }
@@ -147,42 +176,68 @@ export function summarizeByEmployee(occurrences: Occurrence[], month?: string): 
     } else if (o.type === "falta") {
       s.faltas += 1;
       if (!o.justified) s.faltasInjustificadas += 1;
-    } else {
+    } else if (o.type === "atestado") {
       s.atestados += 1;
       s.diasAtestado += month ? daysInMonth(o, month) : occurrenceDays(o);
+    } else {
+      s.folgas += 1;
+      s.diasFolga += month ? daysInMonth(o, month) : occurrenceDays(o);
     }
   }
 
   return Array.from(map.values());
 }
 
-export interface MonthTotals {
-  atrasos: number;
-  minutesLate: number;
-  faltas: number;
-  faltasInjustificadas: number;
-  atestados: number;
-  diasAtestado: number;
-}
+export type MonthTotals = Omit<EmployeeSummary, "key" | "employeeId" | "name" | "department">;
 
-export function monthTotals(occurrences: Occurrence[], month: string): MonthTotals {
-  const totals: MonthTotals = {
+export function emptyTotals(): MonthTotals {
+  return {
     atrasos: 0,
     minutesLate: 0,
     faltas: 0,
     faltasInjustificadas: 0,
     atestados: 0,
     diasAtestado: 0,
+    folgas: 0,
+    diasFolga: 0,
   };
-  for (const s of summarizeByEmployee(occurrences, month)) {
-    totals.atrasos += s.atrasos;
-    totals.minutesLate += s.minutesLate;
-    totals.faltas += s.faltas;
-    totals.faltasInjustificadas += s.faltasInjustificadas;
-    totals.atestados += s.atestados;
-    totals.diasAtestado += s.diasAtestado;
-  }
+}
+
+export function addTotals(totals: MonthTotals, s: MonthTotals): void {
+  totals.atrasos += s.atrasos;
+  totals.minutesLate += s.minutesLate;
+  totals.faltas += s.faltas;
+  totals.faltasInjustificadas += s.faltasInjustificadas;
+  totals.atestados += s.atestados;
+  totals.diasAtestado += s.diasAtestado;
+  totals.folgas += s.folgas;
+  totals.diasFolga += s.diasFolga;
+}
+
+export function monthTotals(occurrences: Occurrence[], month: string): MonthTotals {
+  const totals = emptyTotals();
+  for (const s of summarizeByEmployee(occurrences, month)) addTotals(totals, s);
   return totals;
+}
+
+/**
+ * Dias de folga já lançados para o colaborador, em qualquer período.
+ * `excludeId` ignora uma ocorrência (a que está sendo editada).
+ */
+export function folgaDaysUsed(
+  occurrences: Pick<Occurrence, "id" | "employeeId" | "type" | "date" | "endDate">[],
+  employeeId: string,
+  excludeId?: string
+): number {
+  let used = 0;
+  for (const o of occurrences) {
+    if (o.type === "folga" && o.employeeId === employeeId && o.id !== excludeId) used += occurrenceDays(o);
+  }
+  return used;
+}
+
+export function pluralDias(n: number): string {
+  return `${n} ${Math.abs(n) === 1 ? "dia" : "dias"}`;
 }
 
 /** Meses (YYYY-MM) com alguma ocorrência, mais o mês atual, do mais recente ao mais antigo. */

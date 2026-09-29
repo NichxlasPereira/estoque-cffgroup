@@ -4,6 +4,7 @@ const STYLES: Record<OccurrenceType, string> = {
   atraso: "bg-warn-soft text-warn",
   falta: "bg-critical-soft text-critical",
   atestado: "bg-accent-soft text-accent-strong",
+  folga: "bg-ok-soft text-ok",
 };
 
 export function OccurrenceBadge({ type }: { type: OccurrenceType }) {
