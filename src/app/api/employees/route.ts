@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireFrequenciaUser } from "@/lib/frequenciaAccess";
 import { validateEmployeeInput } from "@/lib/attendanceValidation";
 
 export async function GET() {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const employees = await prisma.employee.findMany({
     orderBy: [{ name: "asc" }],
   });
@@ -10,6 +13,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const body = await request.json().catch(() => null);
   const result = validateEmployeeInput(body);
   if ("error" in result) {

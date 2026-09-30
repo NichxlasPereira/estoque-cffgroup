@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireFrequenciaUser } from "@/lib/frequenciaAccess";
 import { removeAttachmentFiles, saveAttachment } from "@/lib/attachmentStorage";
 
 const ATTACHMENT_SELECT = { id: true, fileName: true, mimeType: true, size: true, createdAt: true } as const;
@@ -8,6 +9,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const { id } = await params;
 
   const occurrence = await prisma.attendanceOccurrence.findUnique({ where: { id } });

@@ -29,25 +29,26 @@ Na primeira execução, o banco de dados é criado automaticamente (migração d
 - `npm run start` — inicia o servidor em modo produção (após `build`).
 - `npm run lint` — roda o ESLint.
 
-## Senhas dos módulos
+## Acesso aos módulos
 
-Além da autenticação geral do site (`BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`), cada módulo pede a sua própria senha, definida em variáveis de ambiente:
+Tudo fica atrás da autenticação geral do site (`BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`). Além disso:
 
-| Módulo | Variável | Tela de senha |
-| --- | --- | --- |
-| Estoque | `ESTOQUE_PASSWORD` | `/entrar` |
-| Frequência (dados de RH e atestados) | `FREQUENCIA_PASSWORD` | `/frequencia/entrar` |
+**Estoque** — senha compartilhada da equipe, na variável `ESTOQUE_PASSWORD` (tela `/entrar`). Sem a variável, o estoque fica bloqueado.
 
-- **Produção (Railway):** em *Variables* do serviço, crie as duas variáveis. O Railway reinicia o serviço sozinho.
-- **Local:** adicione ao `.env` (`ESTOQUE_PASSWORD="..."` e `FREQUENCIA_PASSWORD="..."`) e reinicie o `npm run dev`.
+**Frequência (RH)** — privada: **contas individuais**, cada pessoa com o próprio e-mail e senha (tela `/frequencia/entrar`). O link "frequência" nem aparece no estoque para quem não tem acesso.
 
-As senhas são independentes: entrar em um módulo não libera o outro. Sem a variável, o módulo fica **bloqueado** (a tela de senha avisa que ela não foi configurada). Cada sessão dura 12 horas; trocar a senha encerra as sessões abertas daquele módulo. O link "sair", no topo de cada módulo, encerra a sessão na hora.
+1. **Primeiro acesso:** enquanto não existe nenhuma conta, a tela de entrada pede a *chave de primeiro acesso* — o valor de `FREQUENCIA_PASSWORD` no servidor — e cria a conta de **administrador**. Depois disso a chave não abre mais nada.
+2. **Liberar acesso:** o administrador, na aba **acessos**, cadastra nome, e-mail, uma senha inicial e o perfil (*Acesso* ou *Administrador*). A pessoa troca a senha em "minha senha".
+3. **Tirar acesso:** bloquear, redefinir a senha ou remover encerra as sessões da pessoa na hora. O sistema sempre mantém pelo menos um administrador ativo.
+
+Senhas são guardadas só como hash (scrypt); sessões duram 12 horas e ficam registradas no banco (o navegador guarda só um token aleatório). A verificação de acesso é feita em cada rota da API, não só no proxy.
 
 ## Modelo de dados
 
 - **Material**: nome, categoria, unidade, quantidade, estoque mínimo, local, fornecedor, preço e link de compra.
 - **Retirada**: cópia dos dados do material no momento da retirada (para manter o histórico legível mesmo após edição ou exclusão do material), quantidade, data e responsável.
 
+- **Acesso à frequência**: nome, e-mail, hash da senha, perfil (administrador ou acesso), se está ativo e último acesso; mais as sessões abertas.
 - **Colaborador**: nome, setor, cargo, total de folgas a que tem direito e se está ativo (inativos somem da lista ao registrar novas ocorrências, mas o histórico continua).
 - **Ocorrência**: tipo (`atraso`, `falta`, `atestado` ou `folga`), data inicial e final (atestados e folgas podem cobrir vários dias), minutos de atraso, se foi justificada, gestor que concedeu (folga) e observações. O saldo de folgas é o total do colaborador menos os dias de folga já lançados; a API recusa folgas acima do saldo. Guarda uma cópia do nome e setor do colaborador, como as retiradas fazem com o material.
 

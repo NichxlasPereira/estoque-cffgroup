@@ -28,6 +28,7 @@ export default function Home() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>("estoque");
+  const [canSeeFrequencia, setCanSeeFrequencia] = useState(false);
 
   const [materialSearch, setMaterialSearch] = useState("");
   const [materialCategory, setMaterialCategory] = useState("");
@@ -59,6 +60,10 @@ export default function Home() {
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchMaterials(), fetchWithdrawals()]).finally(() => setLoading(false));
+    // Só quem tem acesso à frequência (RH) vê o link para ela.
+    fetch("/api/frequencia/me")
+      .then((res) => setCanSeeFrequencia(res.ok))
+      .catch(() => undefined);
   }, [fetchMaterials, fetchWithdrawals]);
 
   const stats = useMemo(() => {
@@ -190,6 +195,7 @@ export default function Home() {
     <>
       <Header
         module="estoque"
+        showFrequencia={canSeeFrequencia}
         title={
           <>
             controle que

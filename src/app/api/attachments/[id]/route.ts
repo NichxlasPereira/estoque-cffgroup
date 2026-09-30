@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireFrequenciaUser } from "@/lib/frequenciaAccess";
 import { readAttachment, removeAttachmentFiles } from "@/lib/attachmentStorage";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const { id } = await params;
 
   const attachment = await prisma.attendanceAttachment.findUnique({ where: { id } });
@@ -34,6 +37,8 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const { id } = await params;
 
   const attachment = await prisma.attendanceAttachment.findUnique({ where: { id } });

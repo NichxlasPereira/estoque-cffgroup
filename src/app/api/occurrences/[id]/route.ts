@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireFrequenciaUser } from "@/lib/frequenciaAccess";
 import { validateOccurrenceInput } from "@/lib/attendanceValidation";
 import { removeAttachmentFiles } from "@/lib/attachmentStorage";
 import { checkFolgaBalance } from "@/lib/folgaBalance";
@@ -8,6 +9,8 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const { id } = await params;
   const body = await request.json().catch(() => null);
   const result = validateOccurrenceInput(body);
@@ -49,6 +52,8 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const { id } = await params;
 
   const existing = await prisma.attendanceOccurrence.findUnique({

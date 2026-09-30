@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireFrequenciaUser } from "@/lib/frequenciaAccess";
 import { validateOccurrenceInput } from "@/lib/attendanceValidation";
 import { checkFolgaBalance } from "@/lib/folgaBalance";
 
 export async function GET() {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const occurrences = await prisma.attendanceOccurrence.findMany({
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: {
@@ -17,6 +20,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireFrequenciaUser();
+  if ("response" in auth) return auth.response;
   const body = await request.json().catch(() => null);
   const result = validateOccurrenceInput(body);
   if ("error" in result) {

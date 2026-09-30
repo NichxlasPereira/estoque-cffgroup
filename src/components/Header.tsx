@@ -18,9 +18,12 @@ interface HeaderProps {
   description: string;
   actions: React.ReactNode;
   tabs: React.ReactNode;
+  /** Frequência é restrita ao RH: o link só aparece para quem tem acesso. */
+  showFrequencia?: boolean;
 }
 
-export function Header({ module, title, description, actions, tabs }: HeaderProps) {
+export function Header({ module, title, description, actions, tabs, showFrequencia = true }: HeaderProps) {
+  const modules = MODULES.filter((m) => m.key !== "frequencia" || showFrequencia || module === "frequencia");
   return (
     <header className="relative overflow-hidden border-b border-border bg-surface">
       <Image
@@ -44,23 +47,25 @@ export function Header({ module, title, description, actions, tabs }: HeaderProp
               </div>
               <span className="font-display text-sm font-bold tracking-tight text-ink">cffgroup</span>
             </div>
-            <nav
-              aria-label="Módulos"
-              className="flex items-center gap-1 rounded-full border border-border bg-surface/70 p-1 backdrop-blur"
-            >
-              {MODULES.map((m) => (
-                <Link
-                  key={m.key}
-                  href={m.href}
-                  aria-current={module === m.key ? "page" : undefined}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    module === m.key ? "bg-ink text-bg" : "text-muted hover:text-ink"
-                  }`}
-                >
-                  {m.label}
-                </Link>
-              ))}
-            </nav>
+            {modules.length > 1 && (
+              <nav
+                aria-label="Módulos"
+                className="flex items-center gap-1 rounded-full border border-border bg-surface/70 p-1 backdrop-blur"
+              >
+                {modules.map((m) => (
+                  <Link
+                    key={m.key}
+                    href={m.href}
+                    aria-current={module === m.key ? "page" : undefined}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      module === m.key ? "bg-ink text-bg" : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    {m.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <ThemeToggle />

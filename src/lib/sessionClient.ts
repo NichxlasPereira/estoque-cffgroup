@@ -8,7 +8,7 @@ export function redirectIfSessionExpired(res: Response, loginPath: string, retur
   return true;
 }
 
-export async function logoutModule(module: "estoque" | "frequencia"): Promise<void> {
+export async function logoutModule(module: "estoque"): Promise<void> {
   await fetch("/api/auth/logout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

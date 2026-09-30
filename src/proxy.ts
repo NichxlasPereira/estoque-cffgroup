@@ -1,13 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
+import { FREQ_USER_COOKIE } from "@/lib/frequenciaCookie";
 import { MODULES, isValidSessionToken, moduleForPath, modulePassword } from "@/lib/moduleAuth";
 
 export function proxy(request: NextRequest) {
   const basicAuthFailure = checkBasicAuth(request);
   if (basicAuthFailure) return basicAuthFailure;
-  return checkModulePassword(request) ?? NextResponse.next();
+  return checkFrequencia(request) ?? checkModulePassword(request) ?? NextResponse.next();
 }
 
-/** Segunda barreira: estoque e frequência exigem cada um a sua senha. */
+const FREQ_PUBLIC = new Set(["/frequencia/entrar", "/api/frequencia/login", "/api/frequencia/logout", "/api/frequencia/setup"]);
+
+function isFrequenciaPath(p: string): boolean {
+  const under = (base: string) => p === base || p.startsWith(`${base}/`);
+  return under("/frequencia") || under("/api/frequencia") || under("/api/employees") || under("/api/occurrences") || under("/api/attachments");
+}
+
+/**
+ * Frequência (RH): contas individuais. Aqui é só a checagem rápida — tem o
+ * cookie de sessão? A validação de verdade (sessão no banco, pessoa ativa)
+ * acontece em cada rota da API, via requireFrequenciaUser.
+ */
+function checkFrequencia(request: NextRequest): NextResponse | null {
+  const { pathname, search } = request.nextUrl;
+  if (!isFrequenciaPath(pathname) || FREQ_PUBLIC.has(pathname)) return null;
+  if (request.cookies.get(FREQ_USER_COOKIE)?.value) return NextResponse.next();
+
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json({ error: "Sessão expirada. Entre novamente." }, { status: 401 });
+  }
+  const login = new URL("/frequencia/entrar", request.url);
+  login.searchParams.set("voltar", pathname + search);
+  return NextResponse.redirect(login);
+}
+
+/** Estoque: senha compartilhada do módulo. */
 function checkModulePassword(request: NextRequest): NextResponse | null {
   const { pathname, search } = request.nextUrl;
   const moduleKey = moduleForPath(pathname);

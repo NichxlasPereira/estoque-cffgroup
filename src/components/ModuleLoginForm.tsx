@@ -1,26 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { Button } from "./Button";
 import { ThemeToggle } from "./ThemeToggle";
 import { IconAlertTriangle } from "./icons";
 import { inputClass } from "./attendance/formControls";
 
-type ModuleKey = "estoque" | "frequencia";
+type ModuleKey = "estoque";
 
-const COPY: Record<ModuleKey, { label: string; description: string; envVar: string; other: { href: string; label: string } }> = {
+const COPY: Record<ModuleKey, { label: string; description: string; envVar: string }> = {
   estoque: {
     label: "estoque",
     description: "O estoque é de uso interno. Digite a senha do módulo para continuar.",
     envVar: "ESTOQUE_PASSWORD",
-    other: { href: "/frequencia", label: "Ir para a frequência" },
-  },
-  frequencia: {
-    label: "frequência",
-    description: "A frequência reúne dados de RH e atestados. Digite a senha do módulo para continuar.",
-    envVar: "FREQUENCIA_PASSWORD",
-    other: { href: "/", label: "Ir para o estoque" },
   },
 };
 
@@ -115,12 +107,6 @@ export function ModuleLoginForm({ module, next, configured }: ModuleLoginFormPro
           </div>
         )}
 
-        <Link
-          href={copy.other.href}
-          className="mt-5 inline-block text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
-        >
-          {copy.other.label} →
-        </Link>
       </div>
     </main>
   );

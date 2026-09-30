@@ -103,3 +103,31 @@ model AttendanceAttachment {
 
   @@index([occurrenceId])
 }
+
+// Pessoas autorizadas a acessar o módulo de frequência (RH). Cada uma entra
+// com o próprio e-mail e senha; administradores gerenciam os acessos.
+model FrequenciaUser {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("member") // "admin" | "member"
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions FrequenciaSession[]
+}
+
+// Sessão aberta. O navegador guarda um token aleatório; aqui fica só o hash
+// dele, então um vazamento do banco não permite reutilizar sessões.
+model FrequenciaSession {
+  id        String         @id // sha256 do token do cookie
+  userId    String
+  user      FrequenciaUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime       @default(now())
+
+  @@index([userId])
+}

@@ -1,12 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * Senha própria de cada módulo (estoque e frequência), além do Basic Auth do
- * site inteiro. As senhas vêm de variáveis de ambiente e nunca ficam no
- * código. Sem a variável configurada, o módulo fica bloqueado (falha fechado).
+ * Senha compartilhada por módulo, além do Basic Auth do site inteiro. Vem de
+ * variável de ambiente e nunca fica no código; sem ela, o módulo fica
+ * bloqueado (falha fechado). Hoje só o estoque usa este esquema — a
+ * frequência tem contas individuais (ver frequenciaAccess.ts).
  */
 
-export type ModuleKey = "estoque" | "frequencia";
+export type ModuleKey = "estoque";
 
 interface ModuleConfig {
   envVar: string;
@@ -32,25 +33,12 @@ export const MODULES: Record<ModuleKey, ModuleConfig> = {
     owns: (p) => p === "/" || startsWithSegment(p, "/api/materials") || startsWithSegment(p, "/api/withdrawals"),
     allowsReturnTo: (p) => p === "/" || p.startsWith("/?"),
   },
-  frequencia: {
-    envVar: "FREQUENCIA_PASSWORD",
-    cookie: "freq_session",
-    loginPath: "/frequencia/entrar",
-    home: "/frequencia",
-    owns: (p) =>
-      p !== "/frequencia/entrar" &&
-      (startsWithSegment(p, "/frequencia") ||
-        startsWithSegment(p, "/api/employees") ||
-        startsWithSegment(p, "/api/occurrences") ||
-        startsWithSegment(p, "/api/attachments")),
-    allowsReturnTo: (p) => p === "/frequencia" || p.startsWith("/frequencia/") || p.startsWith("/frequencia?"),
-  },
 };
 
 export const SESSION_SECONDS = 12 * 60 * 60;
 
 export function isModuleKey(value: unknown): value is ModuleKey {
-  return value === "estoque" || value === "frequencia";
+  return value === "estoque";
 }
 
 export function moduleForPath(pathname: string): ModuleKey | null {
