@@ -1,10 +1,13 @@
-import { FrequenciaLoginForm } from "@/components/attendance/FrequenciaLoginForm";
-import { frequenciaPassword } from "@/lib/frequenciaAuth";
+import { ModuleLoginForm } from "@/components/ModuleLoginForm";
+import { modulePassword, safeReturnTo } from "@/lib/moduleAuth";
 
 export default async function EntrarFrequenciaPage({ searchParams }: PageProps<"/frequencia/entrar">) {
   const { voltar } = await searchParams;
-  // Só volta para dentro do módulo — nunca para um endereço externo.
-  const next = typeof voltar === "string" && voltar.startsWith("/frequencia") ? voltar : "/frequencia";
-
-  return <FrequenciaLoginForm next={next} configured={frequenciaPassword() !== null} />;
+  return (
+    <ModuleLoginForm
+      module="frequencia"
+      next={safeReturnTo("frequencia", voltar)}
+      configured={modulePassword("frequencia") !== null}
+    />
+  );
 }

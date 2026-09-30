@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { FREQ_COOKIE, frequenciaPassword, isFrequenciaPath, isValidSessionToken } from "@/lib/frequenciaAuth";
+import { MODULES, isValidSessionToken, moduleForPath, modulePassword } from "@/lib/moduleAuth";
 
 export function proxy(request: NextRequest) {
   const basicAuthFailure = checkBasicAuth(request);
   if (basicAuthFailure) return basicAuthFailure;
-  return checkFrequencia(request) ?? NextResponse.next();
+  return checkModulePassword(request) ?? NextResponse.next();
 }
 
-/** Segunda barreira: o módulo de frequência exige a senha própria. */
-function checkFrequencia(request: NextRequest): NextResponse | null {
+/** Segunda barreira: estoque e frequência exigem cada um a sua senha. */
+function checkModulePassword(request: NextRequest): NextResponse | null {
   const { pathname, search } = request.nextUrl;
-  if (!isFrequenciaPath(pathname)) return null;
+  const moduleKey = moduleForPath(pathname);
+  if (!moduleKey) return null;
 
-  const password = frequenciaPassword();
-  if (password && isValidSessionToken(request.cookies.get(FREQ_COOKIE)?.value, password)) return null;
+  const config = MODULES[moduleKey];
+  const password = modulePassword(moduleKey);
+  if (password && isValidSessionToken(moduleKey, request.cookies.get(config.cookie)?.value, password)) return null;
 
   if (pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Acesso à frequência bloqueado. Entre com a senha." }, { status: 401 });
+    return NextResponse.json({ error: "Acesso bloqueado. Entre com a senha do módulo." }, { status: 401 });
   }
-  const login = new URL("/frequencia/entrar", request.url);
+  const login = new URL(config.loginPath, request.url);
   login.searchParams.set("voltar", pathname + search);
   return NextResponse.redirect(login);
 }

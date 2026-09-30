@@ -29,14 +29,19 @@ Na primeira execução, o banco de dados é criado automaticamente (migração d
 - `npm run start` — inicia o servidor em modo produção (após `build`).
 - `npm run lint` — roda o ESLint.
 
-## Senha do módulo de frequência
+## Senhas dos módulos
 
-Além da autenticação geral do site (`BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`), a frequência — que tem dados de RH e atestados — pede uma senha própria, definida na variável de ambiente `FREQUENCIA_PASSWORD`. O estoque continua acessível para todos.
+Além da autenticação geral do site (`BASIC_AUTH_USER` / `BASIC_AUTH_PASSWORD`), cada módulo pede a sua própria senha, definida em variáveis de ambiente:
 
-- **Produção (Railway):** em *Variables* do serviço, crie `FREQUENCIA_PASSWORD` com a senha desejada. O Railway reinicia o serviço sozinho.
-- **Local:** adicione `FREQUENCIA_PASSWORD="sua-senha"` ao arquivo `.env` e reinicie o `npm run dev`.
+| Módulo | Variável | Tela de senha |
+| --- | --- | --- |
+| Estoque | `ESTOQUE_PASSWORD` | `/entrar` |
+| Frequência (dados de RH e atestados) | `FREQUENCIA_PASSWORD` | `/frequencia/entrar` |
 
-Sem a variável, o módulo fica **bloqueado** (a tela de senha avisa que ela não foi configurada). A sessão dura 12 horas; trocar a senha encerra todas as sessões abertas. O link "sair", no topo da frequência, encerra a sessão na hora.
+- **Produção (Railway):** em *Variables* do serviço, crie as duas variáveis. O Railway reinicia o serviço sozinho.
+- **Local:** adicione ao `.env` (`ESTOQUE_PASSWORD="..."` e `FREQUENCIA_PASSWORD="..."`) e reinicie o `npm run dev`.
+
+As senhas são independentes: entrar em um módulo não libera o outro. Sem a variável, o módulo fica **bloqueado** (a tela de senha avisa que ela não foi configurada). Cada sessão dura 12 horas; trocar a senha encerra as sessões abertas daquele módulo. O link "sair", no topo de cada módulo, encerra a sessão na hora.
 
 ## Modelo de dados
 

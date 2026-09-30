@@ -2,17 +2,36 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { Button } from "../Button";
-import { ThemeToggle } from "../ThemeToggle";
-import { IconAlertTriangle } from "../icons";
-import { inputClass } from "./formControls";
+import { Button } from "./Button";
+import { ThemeToggle } from "./ThemeToggle";
+import { IconAlertTriangle } from "./icons";
+import { inputClass } from "./attendance/formControls";
 
-interface FrequenciaLoginFormProps {
+type ModuleKey = "estoque" | "frequencia";
+
+const COPY: Record<ModuleKey, { label: string; description: string; envVar: string; other: { href: string; label: string } }> = {
+  estoque: {
+    label: "estoque",
+    description: "O estoque é de uso interno. Digite a senha do módulo para continuar.",
+    envVar: "ESTOQUE_PASSWORD",
+    other: { href: "/frequencia", label: "Ir para a frequência" },
+  },
+  frequencia: {
+    label: "frequência",
+    description: "A frequência reúne dados de RH e atestados. Digite a senha do módulo para continuar.",
+    envVar: "FREQUENCIA_PASSWORD",
+    other: { href: "/", label: "Ir para o estoque" },
+  },
+};
+
+interface ModuleLoginFormProps {
+  module: ModuleKey;
   next: string;
   configured: boolean;
 }
 
-export function FrequenciaLoginForm({ next, configured }: FrequenciaLoginFormProps) {
+export function ModuleLoginForm({ module, next, configured }: ModuleLoginFormProps) {
+  const copy = COPY[module];
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
@@ -26,10 +45,10 @@ export function FrequenciaLoginForm({ next, configured }: FrequenciaLoginFormPro
     setSubmitting(true);
     setError(undefined);
     try {
-      const res = await fetch("/api/frequencia/login", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ module, password }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -59,13 +78,11 @@ export function FrequenciaLoginForm({ next, configured }: FrequenciaLoginFormPro
           >
             <span className="font-display text-sm font-bold text-white">C</span>
           </div>
-          <span className="font-display text-sm font-bold tracking-tight text-ink">cffgroup · frequência</span>
+          <span className="font-display text-sm font-bold tracking-tight text-ink">cffgroup · {copy.label}</span>
         </div>
 
         <h1 className="font-display text-2xl font-bold text-ink">Acesso restrito</h1>
-        <p className="mt-1 text-sm text-muted">
-          A frequência reúne dados de RH e atestados. Digite a senha do módulo para continuar.
-        </p>
+        <p className="mt-1 text-sm text-muted">{copy.description}</p>
 
         {configured ? (
           <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3">
@@ -93,13 +110,16 @@ export function FrequenciaLoginForm({ next, configured }: FrequenciaLoginFormPro
             <IconAlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warn" />
             <p>
               A senha ainda não foi definida. O administrador precisa configurar a variável{" "}
-              <code className="font-mono text-xs">FREQUENCIA_PASSWORD</code> no servidor.
+              <code className="font-mono text-xs">{copy.envVar}</code> no servidor.
             </p>
           </div>
         )}
 
-        <Link href="/" className="mt-5 inline-block text-sm text-muted underline-offset-2 hover:text-ink hover:underline">
-          ← Voltar para o estoque
+        <Link
+          href={copy.other.href}
+          className="mt-5 inline-block text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
+        >
+          {copy.other.label} →
         </Link>
       </div>
     </main>

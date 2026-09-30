@@ -16,6 +16,12 @@ import { MaterialModal, MaterialFormValues } from "@/components/MaterialModal";
 import { WithdrawalModal, WithdrawalFormValues } from "@/components/WithdrawalModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { Material, Withdrawal, getStockStatus } from "@/lib/types";
+import { logoutModule, redirectIfSessionExpired } from "@/lib/sessionClient";
+
+/** Sessão do estoque expirou (12h): volta para a tela de senha. */
+function sessionExpired(res: Response): boolean {
+  return redirectIfSessionExpired(res, "/entrar", "/");
+}
 
 export default function Home() {
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -38,12 +44,14 @@ export default function Home() {
 
   const fetchMaterials = useCallback(async () => {
     const res = await fetch("/api/materials");
+    if (sessionExpired(res)) return;
     const data = await res.json();
     setMaterials(data);
   }, []);
 
   const fetchWithdrawals = useCallback(async () => {
     const res = await fetch("/api/withdrawals");
+    if (sessionExpired(res)) return;
     const data = await res.json();
     setWithdrawals(data);
   }, []);
@@ -118,6 +126,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      if (sessionExpired(res)) return;
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Não foi possível salvar o material.");
@@ -133,6 +142,7 @@ export default function Home() {
   async function handleDeleteConfirm(material: Material) {
     try {
       const res = await fetch(`/api/materials/${material.id}`, { method: "DELETE" });
+      if (sessionExpired(res)) return;
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || "Não foi possível excluir o material.");
@@ -158,6 +168,7 @@ export default function Home() {
         }),
       });
 
+      if (sessionExpired(res)) return;
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         if (res.status === 409) {
@@ -199,6 +210,16 @@ export default function Home() {
               <IconArrowDownTray className="h-3.5 w-3.5" />
               registrar retirada
             </Button>
+            <button
+              type="button"
+              onClick={async () => {
+                await logoutModule("estoque");
+                window.location.replace("/entrar");
+              }}
+              className="text-xs font-semibold text-muted underline-offset-2 transition hover:text-ink hover:underline"
+            >
+              sair
+            </button>
           </>
         }
         tabs={<Tabs tabs={STOCK_TABS} active={tab} onChange={setTab} />}

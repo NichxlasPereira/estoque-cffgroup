@@ -32,6 +32,7 @@ import {
   summarizeByEmployee,
 } from "@/lib/attendance";
 import { formatDateBR } from "@/lib/format";
+import { logoutModule, redirectIfSessionExpired } from "@/lib/sessionClient";
 
 const ATTENDANCE_TABS: TabItem<AttendanceTabKey>[] = [
   { key: "ocorrencias", label: "ocorrências" },
@@ -41,9 +42,7 @@ const ATTENDANCE_TABS: TabItem<AttendanceTabKey>[] = [
 
 /** Sessão da frequência expirou (12h): volta para a tela de senha. */
 function sessionExpired(res: Response): boolean {
-  if (res.status !== 401) return false;
-  window.location.replace(`/frequencia/entrar?voltar=${encodeURIComponent("/frequencia")}`);
-  return true;
+  return redirectIfSessionExpired(res, "/frequencia/entrar", "/frequencia");
 }
 
 async function requestJson(url: string, init: RequestInit, fallbackError: string) {
@@ -284,7 +283,7 @@ export default function FrequenciaPage() {
   }
 
   async function logout() {
-    await fetch("/api/frequencia/logout", { method: "POST" }).catch(() => undefined);
+    await logoutModule("frequencia");
     router.push("/");
   }
 
