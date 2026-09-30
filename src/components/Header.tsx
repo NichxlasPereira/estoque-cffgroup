@@ -56,6 +56,8 @@ export function Header({ module, title, description, actions, tabs, showFrequenc
                   <Link
                     key={m.key}
                     href={m.href}
+                    // Trocar de módulo encerra a sessão do atual; nada de pré-carregar.
+                    prefetch={false}
                     aria-current={module === m.key ? "page" : undefined}
                     className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                       module === m.key ? "bg-ink text-bg" : "text-muted hover:text-ink"

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { Button } from "./Button";
 import { ThemeToggle } from "./ThemeToggle";
@@ -107,6 +108,13 @@ export function ModuleLoginForm({ module, next, configured }: ModuleLoginFormPro
           </div>
         )}
 
+        <Link
+          href="/frequencia"
+          prefetch={false}
+          className="mt-5 inline-block text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
+        >
+          Ir para a frequência →
+        </Link>
       </div>
     </main>
   );

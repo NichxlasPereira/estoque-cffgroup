@@ -11,13 +11,16 @@ export async function POST(request: NextRequest) {
   // Compara mesmo quando o e-mail não existe, para não revelar quem tem conta.
   const ok = await verifyPassword(password, user?.passwordHash ?? (await dummyPasswordHash()));
 
-  if (!user || !ok || !user.active) {
+  if (!user || !ok || !user.active || user.pending) {
     // Atraso fixo: torna tentativa e erro em massa bem mais lenta.
     await new Promise((r) => setTimeout(r, 800));
-    return NextResponse.json(
-      { error: user && ok && !user.active ? "Seu acesso está bloqueado. Fale com o administrador." : "E-mail ou senha incorretos." },
-      { status: 401 }
-    );
+    // Só quem acertou a senha fica sabendo da situação do cadastro.
+    const error = !user || !ok
+      ? "E-mail ou senha incorretos."
+      : user.pending
+        ? "Seu cadastro ainda está aguardando a aprovação de um administrador."
+        : "Seu acesso está bloqueado. Fale com o administrador.";
+    return NextResponse.json({ error }, { status: 401 });
   }
 
   const response = NextResponse.json({ ok: true });

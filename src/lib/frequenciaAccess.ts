@@ -25,6 +25,7 @@ export const USER_SELECT = {
   email: true,
   role: true,
   active: true,
+  pending: true,
   lastLoginAt: true,
   createdAt: true,
 } as const;
@@ -108,7 +109,7 @@ export async function currentFrequenciaUser(): Promise<FrequenciaUserInfo | null
     where: { id: tokenHash(token) },
     include: { user: true },
   });
-  if (!session || session.expiresAt < new Date() || !session.user.active) return null;
+  if (!session || session.expiresAt < new Date() || !session.user.active || session.user.pending) return null;
   const { id, name, email, role } = session.user;
   return { id, name, email, role: role === "admin" ? "admin" : "member" };
 }

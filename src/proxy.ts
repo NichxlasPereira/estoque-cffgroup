@@ -8,7 +8,14 @@ export function proxy(request: NextRequest) {
   return checkFrequencia(request) ?? checkModulePassword(request) ?? NextResponse.next();
 }
 
-const FREQ_PUBLIC = new Set(["/frequencia/entrar", "/api/frequencia/login", "/api/frequencia/logout", "/api/frequencia/setup"]);
+
+const FREQ_PUBLIC = new Set([
+  "/frequencia/entrar",
+  "/api/frequencia/login",
+  "/api/frequencia/logout",
+  "/api/frequencia/setup",
+  "/api/frequencia/register",
+]);
 
 function isFrequenciaPath(p: string): boolean {
   const under = (base: string) => p === base || p.startsWith(`${base}/`);

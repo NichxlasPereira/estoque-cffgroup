@@ -35,10 +35,13 @@ Tudo fica atrás da autenticação geral do site (`BASIC_AUTH_USER` / `BASIC_AUT
 
 **Estoque** — senha compartilhada da equipe, na variável `ESTOQUE_PASSWORD` (tela `/entrar`). Sem a variável, o estoque fica bloqueado.
 
-**Frequência (RH)** — privada: **contas individuais**, cada pessoa com o próprio e-mail e senha (tela `/frequencia/entrar`). O link "frequência" nem aparece no estoque para quem não tem acesso.
+**Frequência (RH)** — privada: **contas individuais**, cada pessoa com o próprio e-mail e senha (tela `/frequencia/entrar`).
+
+**Um acesso não mantém o outro:** abrir o estoque encerra a sessão da frequência, e abrir a frequência encerra a do estoque. Isso é feito pela própria página ao abrir (o proxy não consegue distinguir uma visita de um pré-carregamento de link, porque o Next remove esses cabeçalhos antes dele).
 
 1. **Primeiro acesso:** enquanto não existe nenhuma conta, a tela de entrada pede a *chave de primeiro acesso* — o valor de `FREQUENCIA_PASSWORD` no servidor — e cria a conta de **administrador**. Depois disso a chave não abre mais nada.
 2. **Liberar acesso:** o administrador, na aba **acessos**, cadastra nome, e-mail, uma senha inicial e o perfil (*Acesso* ou *Administrador*). A pessoa troca a senha em "minha senha".
+   - Ou a própria pessoa **solicita o cadastro** na tela de entrada ("Solicitar cadastro"). A conta nasce **pendente** e não entra em nada até um administrador **aprovar** na aba acessos (que mostra quantos pedidos aguardam). Recusar descarta o pedido.
 3. **Tirar acesso:** bloquear, redefinir a senha ou remover encerra as sessões da pessoa na hora. O sistema sempre mantém pelo menos um administrador ativo.
 
 Senhas são guardadas só como hash (scrypt); sessões duram 12 horas e ficam registradas no banco (o navegador guarda só um token aleatório). A verificação de acesso é feita em cada rota da API, não só no proxy.

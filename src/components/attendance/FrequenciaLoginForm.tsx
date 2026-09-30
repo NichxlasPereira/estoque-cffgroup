@@ -14,10 +14,23 @@ interface FrequenciaLoginFormProps {
   setupConfigured: boolean;
 }
 
+type Mode = "login" | "register";
+
 export function FrequenciaLoginForm({ next, needsSetup, setupConfigured }: FrequenciaLoginFormProps) {
   const [values, setValues] = useState({ setupKey: "", name: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+  const [mode, setMode] = useState<Mode>("login");
+  const [requestSent, setRequestSent] = useState(false);
+  // Primeiro acesso e pedido de cadastro pedem nome e confirmação de senha.
+  const creating = needsSetup || mode === "register";
+
+  function switchMode(nextMode: Mode) {
+    setMode(nextMode);
+    setError(undefined);
+    setRequestSent(false);
+    setValues((v) => ({ ...v, password: "", confirm: "" }));
+  }
 
   function set(key: keyof typeof values, value: string) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -30,8 +43,8 @@ export function FrequenciaLoginForm({ next, needsSetup, setupConfigured }: Frequ
       setError("Preencha e-mail e senha.");
       return;
     }
-    if (needsSetup) {
-      if (!values.setupKey || !values.name.trim()) {
+    if (creating) {
+      if ((needsSetup && !values.setupKey) || !values.name.trim()) {
         setError("Preencha todos os campos.");
         return;
       }
@@ -43,20 +56,34 @@ export function FrequenciaLoginForm({ next, needsSetup, setupConfigured }: Frequ
 
     setSubmitting(true);
     try {
-      const res = await fetch(needsSetup ? "/api/frequencia/setup" : "/api/frequencia/login", {
+      const url = needsSetup
+        ? "/api/frequencia/setup"
+        : mode === "register"
+          ? "/api/frequencia/register"
+          : "/api/frequencia/login";
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           needsSetup
             ? { setupKey: values.setupKey, name: values.name, email: values.email, password: values.password }
-            : { email: values.email, password: values.password }
+            : mode === "register"
+              ? { name: values.name, email: values.email, password: values.password }
+              : { email: values.email, password: values.password }
         ),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         setError(body.error || "Não foi possível entrar.");
         setValues((v) => ({ ...v, password: "", confirm: "", setupKey: "" }));
-        if (res.status === 409) window.location.reload();
+        if (res.status === 409 && needsSetup) window.location.reload();
+        return;
+      }
+      if (mode === "register" && !needsSetup) {
+        // Pedido enviado: não há sessão até um administrador aprovar.
+        setRequestSent(true);
+        setMode("login");
+        setValues((v) => ({ ...v, name: "", password: "", confirm: "" }));
         return;
       }
       // Navegação completa, para o proxy já receber o cookie novo.
@@ -85,13 +112,21 @@ export function FrequenciaLoginForm({ next, needsSetup, setupConfigured }: Frequ
         </div>
 
         <h1 className="font-display text-2xl font-bold text-ink">
-          {needsSetup ? "Primeiro acesso" : "Acesso restrito"}
+          {needsSetup ? "Primeiro acesso" : mode === "register" ? "Solicitar cadastro" : "Acesso restrito"}
         </h1>
         <p className="mt-1 text-sm text-muted">
           {needsSetup
             ? "Crie a conta de administrador. Depois, é você quem libera o acesso de outras pessoas."
-            : "Área de uso exclusivo do RH. Entre com o seu e-mail e senha."}
+            : mode === "register"
+              ? "Preencha seus dados. Você poderá entrar assim que um administrador aprovar o cadastro."
+              : "Área de uso exclusivo do RH. Entre com o seu e-mail e senha."}
         </p>
+
+        {requestSent && (
+          <div className="mt-4 rounded-[10px] border border-ok bg-ok-soft px-3 py-2.5 text-sm text-ink">
+            Pedido enviado! Assim que um administrador aprovar, entre aqui com o e-mail e a senha que você cadastrou.
+          </div>
+        )}
 
         {needsSetup && !setupConfigured ? (
           <div className="mt-5 flex gap-3 rounded-[10px] border border-warn bg-warn-soft px-3 py-2.5 text-sm text-ink">
@@ -114,36 +149,39 @@ export function FrequenciaLoginForm({ next, needsSetup, setupConfigured }: Frequ
                     className={inputClass(false)}
                   />
                 </Field>
-                <Field label="Seu nome">
-                  <input
-                    value={values.name}
-                    onChange={(e) => set("name", e.target.value)}
-                    autoComplete="name"
-                    className={inputClass(false)}
-                  />
-                </Field>
               </>
+            )}
+            {creating && (
+              <Field label="Seu nome">
+                <input
+                  value={values.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  autoComplete="name"
+                  autoFocus={mode === "register"}
+                  className={inputClass(false)}
+                />
+              </Field>
             )}
             <Field label="E-mail">
               <input
                 type="email"
-                autoComplete={needsSetup ? "email" : "username"}
-                autoFocus={!needsSetup}
+                autoComplete={creating ? "email" : "username"}
+                autoFocus={!creating}
                 value={values.email}
                 onChange={(e) => set("email", e.target.value)}
                 className={inputClass(false)}
               />
             </Field>
-            <Field label={needsSetup ? "Crie uma senha" : "Senha"} hint={needsSetup ? "Mínimo de 8 caracteres." : undefined}>
+            <Field label={creating ? "Crie uma senha" : "Senha"} hint={creating ? "Mínimo de 8 caracteres." : undefined}>
               <input
                 type="password"
-                autoComplete={needsSetup ? "new-password" : "current-password"}
+                autoComplete={creating ? "new-password" : "current-password"}
                 value={values.password}
                 onChange={(e) => set("password", e.target.value)}
                 className={inputClass(!!error)}
               />
             </Field>
-            {needsSetup && (
+            {creating && (
               <Field label="Repita a senha">
                 <input
                   type="password"
@@ -156,12 +194,45 @@ export function FrequenciaLoginForm({ next, needsSetup, setupConfigured }: Frequ
             )}
             {error && <span className="text-xs text-critical">{error}</span>}
             <Button type="submit" disabled={submitting}>
-              {submitting ? "Entrando..." : needsSetup ? "Criar conta e entrar" : "Entrar"}
+              {submitting
+                ? "Enviando..."
+                : needsSetup
+                  ? "Criar conta e entrar"
+                  : mode === "register"
+                    ? "Enviar pedido de cadastro"
+                    : "Entrar"}
             </Button>
+            {!needsSetup && (
+              <p className="text-center text-sm text-muted">
+                {mode === "login" ? (
+                  <>
+                    Não tem acesso?{" "}
+                    <button
+                      type="button"
+                      onClick={() => switchMode("register")}
+                      className="font-semibold text-accent-strong underline-offset-2 hover:underline"
+                    >
+                      Solicitar cadastro
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    Já tem cadastro aprovado?{" "}
+                    <button
+                      type="button"
+                      onClick={() => switchMode("login")}
+                      className="font-semibold text-accent-strong underline-offset-2 hover:underline"
+                    >
+                      Entrar
+                    </button>
+                  </>
+                )}
+              </p>
+            )}
           </form>
         )}
 
-        <Link href="/" className="mt-5 inline-block text-sm text-muted underline-offset-2 hover:text-ink hover:underline">
+        <Link href="/" prefetch={false} className="mt-5 inline-block text-sm text-muted underline-offset-2 hover:text-ink hover:underline">
           ← Voltar para o estoque
         </Link>
       </div>

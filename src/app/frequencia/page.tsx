@@ -32,7 +32,7 @@ import {
   summarizeByEmployee,
 } from "@/lib/attendance";
 import { formatDateBR } from "@/lib/format";
-import { redirectIfSessionExpired } from "@/lib/sessionClient";
+import { endOtherModuleSession, redirectIfSessionExpired } from "@/lib/sessionClient";
 import { AccessPanel, ChangeOwnPasswordModal } from "@/components/attendance/AccessPanel";
 
 interface SessionUser {
@@ -40,6 +40,7 @@ interface SessionUser {
   name: string;
   email: string;
   role: "admin" | "member";
+  pendingRequests: number;
 }
 
 const ATTENDANCE_TABS: TabItem<AttendanceTabKey>[] = [
@@ -48,7 +49,9 @@ const ATTENDANCE_TABS: TabItem<AttendanceTabKey>[] = [
   { key: "relatorios", label: "relatórios" },
 ];
 
-const ADMIN_TABS: TabItem<AttendanceTabKey>[] = [...ATTENDANCE_TABS, { key: "acessos", label: "acessos" }];
+function adminTabs(pendingRequests: number): TabItem<AttendanceTabKey>[] {
+  return [...ATTENDANCE_TABS, { key: "acessos", label: pendingRequests > 0 ? `acessos · ${pendingRequests}` : "acessos" }];
+}
 
 /** Sessão da frequência expirou (12h): volta para a tela de senha. */
 function sessionExpired(res: Response): boolean {
@@ -113,6 +116,7 @@ export default function FrequenciaPage() {
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchEmployees(), fetchOccurrences(), fetchMe()]).finally(() => setLoading(false));
+    endOtherModuleSession("frequencia");
   }, [fetchEmployees, fetchOccurrences, fetchMe]);
 
   const months = useMemo(() => availableMonths(occurrences), [occurrences]);
@@ -377,7 +381,9 @@ export default function FrequenciaPage() {
             )}
           </>
         }
-        tabs={<Tabs tabs={me?.role === "admin" ? ADMIN_TABS : ATTENDANCE_TABS} active={tab} onChange={setTab} />}
+        tabs={
+          <Tabs tabs={me?.role === "admin" ? adminTabs(me.pendingRequests) : ATTENDANCE_TABS} active={tab} onChange={setTab} />
+        }
       />
 
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-6 py-8">
@@ -388,7 +394,7 @@ export default function FrequenciaPage() {
         />
 
         {tab === "acessos" && me?.role === "admin" ? (
-          <AccessPanel currentUserId={me.id} />
+          <AccessPanel currentUserId={me.id} onChanged={fetchMe} />
         ) : (
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <AttendanceFilters

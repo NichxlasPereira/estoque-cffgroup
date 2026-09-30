@@ -113,6 +113,8 @@ model FrequenciaUser {
   passwordHash String
   role         String    @default("member") // "admin" | "member"
   active       Boolean   @default(true)
+  // Cadastro feito pela própria pessoa: só entra depois que um administrador aprovar.
+  pending      Boolean   @default(false)
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

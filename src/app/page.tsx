@@ -16,7 +16,7 @@ import { MaterialModal, MaterialFormValues } from "@/components/MaterialModal";
 import { WithdrawalModal, WithdrawalFormValues } from "@/components/WithdrawalModal";
 import { DeleteConfirmModal } from "@/components/DeleteConfirmModal";
 import { Material, Withdrawal, getStockStatus } from "@/lib/types";
-import { logoutModule, redirectIfSessionExpired } from "@/lib/sessionClient";
+import { endOtherModuleSession, logoutModule, redirectIfSessionExpired } from "@/lib/sessionClient";
 
 /** Sessão do estoque expirou (12h): volta para a tela de senha. */
 function sessionExpired(res: Response): boolean {
@@ -28,7 +28,6 @@ export default function Home() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabKey>("estoque");
-  const [canSeeFrequencia, setCanSeeFrequencia] = useState(false);
 
   const [materialSearch, setMaterialSearch] = useState("");
   const [materialCategory, setMaterialCategory] = useState("");
@@ -60,10 +59,7 @@ export default function Home() {
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchMaterials(), fetchWithdrawals()]).finally(() => setLoading(false));
-    // Só quem tem acesso à frequência (RH) vê o link para ela.
-    fetch("/api/frequencia/me")
-      .then((res) => setCanSeeFrequencia(res.ok))
-      .catch(() => undefined);
+    endOtherModuleSession("estoque");
   }, [fetchMaterials, fetchWithdrawals]);
 
   const stats = useMemo(() => {
@@ -195,7 +191,8 @@ export default function Home() {
     <>
       <Header
         module="estoque"
-        showFrequencia={canSeeFrequencia}
+        // Frequência é do RH: o estoque não mostra o link (o acesso é por /frequencia).
+        showFrequencia={false}
         title={
           <>
             controle que

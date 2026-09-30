@@ -13,12 +13,15 @@ export interface AccessUser {
   email: string;
   role: "admin" | "member";
   active: boolean;
+  pending: boolean;
   lastLoginAt: string | null;
   createdAt: string;
 }
 
 interface AccessPanelProps {
   currentUserId: string;
+  /** Avisa a página quando a lista muda (atualiza o contador de pedidos). */
+  onChanged?: () => void;
 }
 
 async function send(url: string, method: string, body?: unknown) {
@@ -42,7 +45,7 @@ function formatLastLogin(value: string | null): string {
 }
 
 /** Aba "acessos": quem pode entrar na frequência. Só administradores veem. */
-export function AccessPanel({ currentUserId }: AccessPanelProps) {
+export function AccessPanel({ currentUserId, onChanged }: AccessPanelProps) {
   const [users, setUsers] = useState<AccessUser[] | null>(null);
   const [adding, setAdding] = useState(false);
   const [resetting, setResetting] = useState<AccessUser | null>(null);
@@ -51,16 +54,24 @@ export function AccessPanel({ currentUserId }: AccessPanelProps) {
   const load = useCallback(async () => {
     try {
       setUsers(await send("/api/frequencia/users", "GET"));
+      onChanged?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro inesperado.");
     }
-  }, []);
+  }, [onChanged]);
+
+  const pending = users?.filter((u) => u.pending) ?? [];
+  const members = users?.filter((u) => !u.pending) ?? null;
 
   useEffect(() => {
     load();
   }, [load]);
 
-  async function update(user: AccessUser, changes: Partial<Pick<AccessUser, "active" | "role">>, message: string) {
+  async function update(
+    user: AccessUser,
+    changes: Partial<Pick<AccessUser, "active" | "role">> & { approve?: boolean },
+    message: string
+  ) {
     try {
       await send(`/api/frequencia/users/${user.id}`, "PATCH", changes);
       await load();
@@ -83,10 +94,49 @@ export function AccessPanel({ currentUserId }: AccessPanelProps) {
         </Button>
       </div>
 
+      {pending.length > 0 && (
+        <div className="rounded-[14px] border border-warn bg-surface">
+          <div className="border-b border-border px-4 py-3">
+            <h3 className="font-display text-base font-semibold text-ink">
+              Pedidos de cadastro <span className="font-mono text-warn">({pending.length})</span>
+            </h3>
+            <p className="text-xs text-muted">
+              Essas pessoas se cadastraram sozinhas e ainda não entram. Aprove só quem deve ver dados de RH.
+            </p>
+          </div>
+          <ul>
+            {pending.map((u) => (
+              <li
+                key={u.id}
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 last:border-0"
+              >
+                <div>
+                  <p className="font-medium text-ink">{u.name}</p>
+                  <p className="text-xs text-muted">
+                    {u.email} · pedido em {formatLastLogin(u.createdAt)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => update(u, { approve: true }, `${u.name} agora tem acesso.`)}
+                    className="!px-4 !py-1.5 text-xs"
+                  >
+                    Aprovar
+                  </Button>
+                  <Button variant="ghost" onClick={() => setRemoving(u)} className="!px-4 !py-1.5 text-xs">
+                    Recusar
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="rounded-[14px] border border-border bg-surface">
-        {users === null ? (
+        {members === null ? (
           <p className="px-6 py-16 text-center text-sm text-muted">Carregando...</p>
-        ) : users.length === 0 ? (
+        ) : members.length === 0 ? (
           <EmptyState icon={<IconUsers className="h-6 w-6" />} title="Nenhum acesso" text="Libere o acesso de alguém." />
         ) : (
           <div className="overflow-x-auto">
@@ -101,7 +151,7 @@ export function AccessPanel({ currentUserId }: AccessPanelProps) {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => {
+                {members.map((u) => {
                   const isSelf = u.id === currentUserId;
                   return (
                     <tr key={u.id} className={`border-b border-border last:border-0 ${u.active ? "" : "opacity-60"}`}>
@@ -175,7 +225,7 @@ export function AccessPanel({ currentUserId }: AccessPanelProps) {
       <Modal
         open={!!removing}
         onClose={() => setRemoving(null)}
-        title="Remover acesso"
+        title={removing?.pending ? "Recusar pedido" : "Remover acesso"}
         maxWidthClassName="max-w-md"
         footer={
           <>
@@ -189,22 +239,32 @@ export function AccessPanel({ currentUserId }: AccessPanelProps) {
                 if (!removing) return;
                 try {
                   await send(`/api/frequencia/users/${removing.id}`, "DELETE");
+                  const wasPending = removing.pending;
                   setRemoving(null);
                   await load();
-                  toast.success("Acesso removido.");
+                  toast.success(wasPending ? "Pedido recusado." : "Acesso removido.");
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : "Erro inesperado.");
                 }
               }}
             >
-              Remover acesso
+              {removing?.pending ? "Recusar pedido" : "Remover acesso"}
             </Button>
           </>
         }
       >
         <p className="text-sm text-ink">
-          <strong>{removing?.name}</strong> não vai mais conseguir entrar na frequência. Os registros de
-          ocorrências não são afetados.
+          {removing?.pending ? (
+            <>
+              O pedido de <strong>{removing?.name}</strong> será descartado. Se precisar, a pessoa pode pedir de
+              novo.
+            </>
+          ) : (
+            <>
+              <strong>{removing?.name}</strong> não vai mais conseguir entrar na frequência. Os registros de
+              ocorrências não são afetados.
+            </>
+          )}
         </p>
       </Modal>
     </div>

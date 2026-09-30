@@ -5,7 +5,7 @@ import { USER_SELECT, hashPassword, requireFrequenciaUser, validateNewPassword }
 /** Sempre sobra pelo menos um administrador ativo. */
 async function wouldRemoveLastAdmin(userId: string): Promise<boolean> {
   const others = await prisma.frequenciaUser.count({
-    where: { role: "admin", active: true, id: { not: userId } },
+    where: { role: "admin", active: true, pending: false, id: { not: userId } },
   });
   return others === 0;
 }
@@ -23,8 +23,10 @@ export async function PATCH(
   if (!target) return NextResponse.json({ error: "Acesso não encontrado." }, { status: 404 });
 
   const body = await request.json().catch(() => null);
-  const data: { active?: boolean; role?: string; passwordHash?: string } = {};
+  const data: { active?: boolean; role?: string; passwordHash?: string; pending?: boolean } = {};
 
+  // Aprovar pedido de cadastro. Recusar é excluir (DELETE).
+  if (body?.approve === true) data.pending = false;
   if (typeof body?.active === "boolean") data.active = body.active;
   if (body?.role === "admin" || body?.role === "member") data.role = body.role;
   if (body?.password !== undefined) {
@@ -33,7 +35,8 @@ export async function PATCH(
     data.passwordHash = await hashPassword(body.password);
   }
 
-  const losesAdmin = target.role === "admin" && target.active && (data.active === false || data.role === "member");
+  const losesAdmin =
+    target.role === "admin" && target.active && !target.pending && (data.active === false || data.role === "member");
   if (losesAdmin && (await wouldRemoveLastAdmin(id))) {
     return NextResponse.json({ error: "É preciso manter pelo menos um administrador ativo." }, { status: 409 });
   }
