@@ -219,7 +219,7 @@ async function main() {
   if ((await prisma.employee.count()) === 0) {
     const [mariana, joao, fernanda, carlos] = await prisma.$transaction([
       prisma.employee.create({ data: { name: "Mariana Souza", department: "Administrativo", role: "Assistente" } }),
-      prisma.employee.create({ data: { name: "João Pedro", department: "Comercial", role: "Vendedor" } }),
+      prisma.employee.create({ data: { name: "João Pedro", department: "Comercial", role: "Vendedor", folgaAllowance: 3 } }),
       prisma.employee.create({ data: { name: "Fernanda Lima", department: "Financeiro", role: "Analista" } }),
       prisma.employee.create({ data: { name: "Carlos Eduardo", department: "TI", role: "Suporte" } }),
     ]);
@@ -232,10 +232,18 @@ async function main() {
 
     await prisma.$transaction([
       prisma.attendanceOccurrence.create({
-        data: { ...snapshot(joao), type: "atraso", date: daysAgo(1), endDate: daysAgo(1), minutesLate: 20, notes: "Trânsito" },
+        data: { ...snapshot(joao), type: "falta", date: daysAgo(1), endDate: daysAgo(1), justified: true, notes: "Consulta médica" },
       }),
       prisma.attendanceOccurrence.create({
-        data: { ...snapshot(joao), type: "atraso", date: daysAgo(4), endDate: daysAgo(4), minutesLate: 10 },
+        data: {
+          ...snapshot(joao),
+          type: "folga",
+          date: daysAgo(4),
+          endDate: daysAgo(4),
+          justified: true,
+          approvedBy: "Fernanda Lima",
+          notes: "Folga de aniversário",
+        },
       }),
       prisma.attendanceOccurrence.create({
         data: { ...snapshot(mariana), type: "falta", date: daysAgo(3), endDate: daysAgo(3), justified: false },

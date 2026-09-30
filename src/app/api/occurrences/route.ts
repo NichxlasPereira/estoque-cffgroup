@@ -8,6 +8,8 @@ export async function GET() {
   const auth = await requireFrequenciaUser();
   if ("response" in auth) return auth.response;
   const occurrences = await prisma.attendanceOccurrence.findMany({
+    // Atrasos foram retirados do sistema; os antigos ficam no banco, fora da lista.
+    where: { type: { not: "atraso" } },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: {
       attachments: {

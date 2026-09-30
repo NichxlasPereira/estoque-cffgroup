@@ -251,7 +251,6 @@ export default function FrequenciaPage() {
             type: values.type,
             date: values.date,
             endDate: isMultiDay(values.type) ? values.endDate : values.date,
-            minutesLate: values.type === "atraso" ? Number(values.minutesLate) : null,
             justified: values.justified,
             approvedBy: values.type === "folga" ? values.approvedBy.trim() : null,
             notes: values.notes.trim() || null,
@@ -310,14 +309,13 @@ export default function FrequenciaPage() {
   }
 
   function exportCsv() {
-    const header = ["Data inicial", "Data final", "Colaborador", "Setor", "Tipo", "Minutos de atraso", "Dias", "Justificada", "Gestor (folga)", "Anexos", "Observações"];
+    const header = ["Data inicial", "Data final", "Colaborador", "Setor", "Tipo", "Dias", "Justificada", "Gestor (folga)", "Anexos", "Observações"];
     const rows = filteredOccurrences.map((o) => [
       formatDateBR(o.date),
       formatDateBR(o.endDate),
       o.employeeName,
       o.employeeDepartment ?? "",
       OCCURRENCE_LABEL[o.type],
-      o.minutesLate !== null ? String(o.minutesLate) : "",
       String(occurrenceDays(o)),
       o.justified ? "Sim" : "Não",
       o.approvedBy ?? "",
@@ -341,14 +339,14 @@ export default function FrequenciaPage() {
         module="frequencia"
         title={
           <>
-            quem chegou,
-            <br />
             quem faltou,
+            <br />
+            quem folgou,
             <br />
             quem justificou —
           </>
         }
-        description="Registre atrasos, faltas e atestados da equipe CFFGROUP e acompanhe a frequência de cada colaborador mês a mês."
+        description="Registre faltas, atestados e folgas da equipe CFFGROUP e acompanhe a frequência de cada colaborador mês a mês."
         actions={
           <>
             <Button variant="ghost" onClick={openNewEmployee} className="!px-4 !py-2 text-xs">

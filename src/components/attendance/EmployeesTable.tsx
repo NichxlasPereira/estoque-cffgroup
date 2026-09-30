@@ -1,6 +1,6 @@
 "use client";
 
-import { Employee, EmployeeSummary, formatMinutes, pluralDias } from "@/lib/attendance";
+import { Employee, EmployeeSummary, pluralDias } from "@/lib/attendance";
 import { IconCalendarPlus, IconEdit, IconTrash, IconUsers } from "../icons";
 import { ActionButton, EmptyState } from "./formControls";
 
@@ -44,7 +44,6 @@ export function EmployeesTable({
               <tr className="border-b border-border bg-surface-2/60 text-xs uppercase tracking-wide text-muted">
                 <th className="px-4 py-3 font-medium">Colaborador</th>
                 <th className="px-4 py-3 font-medium">Setor</th>
-                <th className="px-4 py-3 font-medium">Atrasos</th>
                 <th className="px-4 py-3 font-medium">Faltas</th>
                 <th className="px-4 py-3 font-medium">Atestados</th>
                 <th className="px-4 py-3 font-medium">Folgas</th>
@@ -71,12 +70,6 @@ export function EmployeesTable({
                       {emp.role && <p className="text-xs text-muted">{emp.role}</p>}
                     </td>
                     <td className="px-4 py-3 text-muted">{emp.department || "—"}</td>
-                    <td className="px-4 py-3">
-                      <Count value={s?.atrasos ?? 0} tone="warn" />
-                      {s && s.minutesLate > 0 && (
-                        <span className="block text-xs text-muted">{formatMinutes(s.minutesLate)} no total</span>
-                      )}
-                    </td>
                     <td className="px-4 py-3">
                       <Count value={s?.faltas ?? 0} tone="critical" />
                       {s && s.faltasInjustificadas > 0 && (
@@ -144,7 +137,7 @@ function FolgaCell({ remaining, total, usedInPeriod }: { remaining: number; tota
   );
 }
 
-function Count({ value, tone }: { value: number; tone: "warn" | "critical" | "accent" }) {
-  const color = value === 0 ? "text-muted" : tone === "warn" ? "text-warn" : tone === "critical" ? "text-critical" : "text-accent-strong";
+function Count({ value, tone }: { value: number; tone: "critical" | "accent" }) {
+  const color = value === 0 ? "text-muted" : tone === "critical" ? "text-critical" : "text-accent-strong";
   return <span className={`font-mono text-base font-semibold tabular-nums ${color}`}>{value}</span>;
 }

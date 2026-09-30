@@ -1,9 +1,10 @@
-export type OccurrenceType = "atraso" | "falta" | "atestado" | "folga";
+// "atraso" existiu até 30/09/2026 e foi retirado do sistema. Registros antigos
+// desse tipo continuam no banco, mas a API não os lista nem aceita novos.
+export type OccurrenceType = "falta" | "atestado" | "folga";
 
-export const OCCURRENCE_TYPES: OccurrenceType[] = ["atraso", "falta", "atestado", "folga"];
+export const OCCURRENCE_TYPES: OccurrenceType[] = ["falta", "atestado", "folga"];
 
 export const OCCURRENCE_LABEL: Record<OccurrenceType, string> = {
-  atraso: "Atraso",
   falta: "Falta",
   atestado: "Atestado",
   folga: "Folga",
@@ -59,7 +60,6 @@ export interface Occurrence {
   type: OccurrenceType;
   date: string;
   endDate: string;
-  minutesLate: number | null;
   justified: boolean;
   approvedBy: string | null;
   notes: string | null;
@@ -70,7 +70,7 @@ export interface Occurrence {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Dias corridos cobertos pela ocorrência (inclusivo). Atraso e falta contam 1. */
+/** Dias corridos cobertos pela ocorrência (inclusivo). Falta conta 1. */
 export function occurrenceDays(o: Pick<Occurrence, "date" | "endDate">): number {
   const start = new Date(o.date).getTime();
   const end = new Date(o.endDate).getTime();
@@ -123,20 +123,11 @@ export function overlapsMonth(o: Pick<Occurrence, "date" | "endDate">, key: stri
   return daysInMonth(o, key) > 0;
 }
 
-export function formatMinutes(total: number): string {
-  if (total < 60) return `${total} min`;
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  return m === 0 ? `${h}h` : `${h}h${String(m).padStart(2, "0")}`;
-}
-
 export interface EmployeeSummary {
   key: string;
   employeeId: string | null;
   name: string;
   department: string | null;
-  atrasos: number;
-  minutesLate: number;
   faltas: number;
   faltasInjustificadas: number;
   atestados: number;
@@ -159,8 +150,6 @@ export function summarizeByEmployee(occurrences: Occurrence[], month?: string): 
         employeeId: o.employeeId,
         name: o.employeeName,
         department: o.employeeDepartment,
-        atrasos: 0,
-        minutesLate: 0,
         faltas: 0,
         faltasInjustificadas: 0,
         atestados: 0,
@@ -170,10 +159,7 @@ export function summarizeByEmployee(occurrences: Occurrence[], month?: string): 
       };
       map.set(key, s);
     }
-    if (o.type === "atraso") {
-      s.atrasos += 1;
-      s.minutesLate += o.minutesLate ?? 0;
-    } else if (o.type === "falta") {
+    if (o.type === "falta") {
       s.faltas += 1;
       if (!o.justified) s.faltasInjustificadas += 1;
     } else if (o.type === "atestado") {
@@ -192,8 +178,6 @@ export type MonthTotals = Omit<EmployeeSummary, "key" | "employeeId" | "name" | 
 
 export function emptyTotals(): MonthTotals {
   return {
-    atrasos: 0,
-    minutesLate: 0,
     faltas: 0,
     faltasInjustificadas: 0,
     atestados: 0,
@@ -204,8 +188,6 @@ export function emptyTotals(): MonthTotals {
 }
 
 export function addTotals(totals: MonthTotals, s: MonthTotals): void {
-  totals.atrasos += s.atrasos;
-  totals.minutesLate += s.minutesLate;
   totals.faltas += s.faltas;
   totals.faltasInjustificadas += s.faltasInjustificadas;
   totals.atestados += s.atestados;

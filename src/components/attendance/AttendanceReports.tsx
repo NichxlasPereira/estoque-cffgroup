@@ -5,7 +5,6 @@ import {
   OCCURRENCE_LABEL,
   OCCURRENCE_TYPES,
   Occurrence,
-  formatMinutes,
   monthKeyLabel,
   monthTotals,
   overlapsMonth,
@@ -30,8 +29,6 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
         (a, b) =>
           b.faltasInjustificadas - a.faltasInjustificadas ||
           b.faltas - a.faltas ||
-          b.atrasos - a.atrasos ||
-          b.minutesLate - a.minutesLate ||
           b.diasAtestado - a.diasAtestado ||
           b.diasFolga - a.diasFolga
       ),
@@ -43,12 +40,12 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
     value: inMonth.filter((o) => o.type === t).length,
   }));
 
-  // Atrasos e faltas acontecem num dia só — o dia da semana diz algo sobre padrões.
+  // Faltas acontecem num dia só — o dia da semana diz algo sobre padrões.
   // Atestados e folgas cobrem períodos e ficam de fora.
   const byWeekday = useMemo(() => {
     const counts = WEEKDAY_LABELS.map((label) => ({ label, value: 0 }));
     for (const o of inMonth) {
-      if (o.type === "atestado" || o.type === "folga") continue;
+      if (o.type !== "falta") continue;
       counts[new Date(o.date).getUTCDay()].value += 1;
     }
     return counts;
@@ -82,7 +79,7 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
         </div>
         <p className="font-medium text-ink">Nenhuma ocorrência em {monthKeyLabel(month)}</p>
         <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
-          Escolha outro mês no filtro ao lado, ou registre atrasos, faltas e atestados para ver quem
+          Escolha outro mês no filtro ao lado, ou registre faltas, atestados e folgas para ver quem
           mais se ausenta, os dias da semana mais críticos e a evolução mês a mês.
         </p>
       </div>
@@ -102,14 +99,12 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
 
       <div className="rounded-[14px] border border-border bg-surface">
         <h3 className="px-5 pt-5 font-display text-lg font-semibold text-ink">Por colaborador</h3>
-        <p className="px-5 pb-3 text-xs text-muted">Ordenado por faltas não justificadas, depois faltas e atrasos.</p>
+        <p className="px-5 pb-3 text-xs text-muted">Ordenado por faltas não justificadas, depois faltas e dias de atestado.</p>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-y border-border bg-surface-2/60 text-xs uppercase tracking-wide text-muted">
                 <th className="px-4 py-3 font-medium">Colaborador</th>
-                <th className="px-4 py-3 text-right font-medium">Atrasos</th>
-                <th className="px-4 py-3 text-right font-medium">Tempo atrasado</th>
                 <th className="px-4 py-3 text-right font-medium">Faltas</th>
                 <th className="px-4 py-3 text-right font-medium">Não justif.</th>
                 <th className="px-4 py-3 text-right font-medium">Dias de atestado</th>
@@ -122,10 +117,6 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
                   <td className="px-4 py-3">
                     <p className="font-medium text-ink">{s.name}</p>
                     <p className="text-xs text-muted">{s.department ?? "Sem setor"}</p>
-                  </td>
-                  <Num value={s.atrasos} />
-                  <td className="px-4 py-3 text-right font-mono tabular-nums text-ink">
-                    {s.minutesLate > 0 ? formatMinutes(s.minutesLate) : <span className="text-muted">—</span>}
                   </td>
                   <Num value={s.faltas} />
                   <Num value={s.faltasInjustificadas} highlight />
@@ -142,9 +133,9 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
         <ChartCard title="Ocorrências por tipo">
           <DonutChart data={byType} centerCaption="ocorrências" />
         </ChartCard>
-        <ChartCard title="Atrasos e faltas por dia da semana">
+        <ChartCard title="Faltas por dia da semana">
           {byWeekday.some((d) => d.value > 0) ? (
-            <DonutChart data={byWeekday} centerCaption="atrasos e faltas" />
+            <DonutChart data={byWeekday} centerCaption="faltas" />
           ) : (
             <p className="text-sm text-muted">Só há atestados e folgas neste mês.</p>
           )}
@@ -157,7 +148,6 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
             <thead>
               <tr className="text-xs uppercase tracking-wide text-muted">
                 <th className="pb-2 font-medium">Mês</th>
-                <th className="pb-2 text-right font-medium">Atrasos</th>
                 <th className="pb-2 text-right font-medium">Faltas</th>
                 <th className="pb-2 text-right font-medium">Dias atest.</th>
                 <th className="pb-2 text-right font-medium">Dias folga</th>
@@ -167,7 +157,6 @@ export function AttendanceReports({ occurrences, month, months }: AttendanceRepo
               {history.map((h) => (
                 <tr key={h.month} className={`border-t border-border ${h.month === month ? "font-semibold" : ""}`}>
                   <td className="py-2 text-ink">{monthKeyLabel(h.month)}</td>
-                  <td className="py-2 text-right font-mono tabular-nums text-ink">{h.atrasos}</td>
                   <td className="py-2 text-right font-mono tabular-nums text-ink">{h.faltas}</td>
                   <td className="py-2 text-right font-mono tabular-nums text-ink">{h.diasAtestado}</td>
                   <td className="py-2 text-right font-mono tabular-nums text-ink">{h.diasFolga}</td>

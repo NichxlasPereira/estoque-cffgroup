@@ -27,7 +27,6 @@ export interface OccurrenceFormValues {
   type: OccurrenceType;
   date: string;
   endDate: string;
-  minutesLate: string;
   justified: boolean;
   approvedBy: string;
   notes: string;
@@ -53,7 +52,6 @@ interface OccurrenceModalProps {
 type FormErrors = Partial<Record<keyof OccurrenceFormValues, string>>;
 
 const TYPE_HINT: Record<OccurrenceType, string> = {
-  atraso: "Chegada após o horário. Informe quantos minutos.",
   falta: "Ausência no dia, com ou sem justificativa.",
   atestado: "Afastamento com atestado médico — pode cobrir vários dias.",
   folga: "Folga concedida por um gestor — desconta do saldo do colaborador.",
@@ -129,14 +127,6 @@ export function OccurrenceModal({
     const errs: FormErrors = {};
     if (!values.employeeId) errs.employeeId = "Selecione um colaborador.";
     if (!values.date) errs.date = "Informe a data.";
-    if (values.type === "atraso") {
-      const minutes = Number(values.minutesLate);
-      if (!Number.isInteger(minutes) || minutes <= 0) {
-        errs.minutesLate = "Informe os minutos de atraso (número inteiro maior que zero).";
-      } else if (minutes > 24 * 60) {
-        errs.minutesLate = "O atraso não pode passar de 24 horas.";
-      }
-    }
     if (isMultiDay(values.type)) {
       if (!values.endDate) errs.endDate = "Informe o último dia.";
       else if (values.date && values.endDate < values.date) {
@@ -226,7 +216,7 @@ export function OccurrenceModal({
 
         <div className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium text-ink">Tipo</span>
-          <div role="radiogroup" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div role="radiogroup" className="grid grid-cols-3 gap-2">
             {OCCURRENCE_TYPES.map((t) => (
               <button
                 key={t}
@@ -281,20 +271,6 @@ export function OccurrenceModal({
               />
             </Field>
           )}
-
-          {values.type === "atraso" && (
-            <Field label="Minutos de atraso" error={errors.minutesLate}>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                value={values.minutesLate}
-                onChange={(e) => set("minutesLate", e.target.value)}
-                className={inputClass(!!errors.minutesLate) + " font-mono tabular-nums"}
-                placeholder="Ex.: 15"
-              />
-            </Field>
-          )}
         </div>
 
         {values.type === "folga" && (
@@ -337,9 +313,7 @@ export function OccurrenceModal({
               className="mt-0.5 h-4 w-4 accent-[var(--accent)]"
             />
             <span>
-              <span className="font-medium text-ink">
-                {values.type === "falta" ? "Falta justificada" : "Atraso justificado"}
-              </span>
+              <span className="font-medium text-ink">Falta justificada</span>
               <span className="block text-xs text-muted">
                 Marque se houve justificativa aceita (ex.: declaração, combinado com o gestor).
               </span>
@@ -361,13 +335,11 @@ export function OccurrenceModal({
             rows={3}
             className={inputClass(false) + " resize-y"}
             placeholder={
-              values.type === "atraso"
-                ? "Ex.: trânsito, problema no transporte..."
-                : values.type === "falta"
-                  ? "Ex.: motivo informado pelo colaborador"
-                  : values.type === "folga"
-                    ? "Ex.: folga de aniversário, compensação de banco de horas..."
-                    : "Ex.: atestado entregue ao RH em mãos"
+              values.type === "falta"
+                ? "Ex.: motivo informado pelo colaborador"
+                : values.type === "folga"
+                  ? "Ex.: folga de aniversário, compensação de banco de horas..."
+                  : "Ex.: atestado entregue ao RH em mãos"
             }
           />
         </Field>
@@ -539,7 +511,6 @@ function initialValues(occurrence: Occurrence | null, preselected: Employee | nu
     type: occurrence.type,
     date: toInputDate(occurrence.date),
     endDate: toInputDate(occurrence.endDate),
-    minutesLate: occurrence.minutesLate !== null ? String(occurrence.minutesLate) : "",
     justified: occurrence.justified,
     approvedBy: occurrence.approvedBy ?? "",
     notes: occurrence.notes ?? "",
@@ -550,10 +521,9 @@ function emptyForm(): OccurrenceFormValues {
   const today = todayInputValue();
   return {
     employeeId: "",
-    type: "atraso",
+    type: "falta",
     date: today,
     endDate: today,
-    minutesLate: "",
     justified: false,
     approvedBy: "",
     notes: "",

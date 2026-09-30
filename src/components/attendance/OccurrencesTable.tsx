@@ -1,6 +1,6 @@
 "use client";
 
-import { Occurrence, formatMinutes, occurrenceDays, pluralDias } from "@/lib/attendance";
+import { Occurrence, occurrenceDays, pluralDias } from "@/lib/attendance";
 import { formatDateBR } from "@/lib/format";
 import { IconCalendarPlus, IconEdit, IconPaperclip, IconTrash } from "../icons";
 import { ActionButton, EmptyState } from "./formControls";
@@ -23,7 +23,7 @@ export function OccurrencesTable({ occurrences, hasAny, onEdit, onDelete }: Occu
           text={
             hasAny
               ? "Ajuste a busca, o tipo ou o mês para encontrar o que procura."
-              : "Clique em “registrar ocorrência” para lançar um atraso, falta ou atestado."
+              : "Clique em “registrar ocorrência” para lançar uma falta, atestado ou folga."
           }
         />
       ) : (
@@ -59,12 +59,7 @@ export function OccurrencesTable({ occurrences, hasAny, onEdit, onDelete }: Occu
                       <OccurrenceBadge type={o.type} />
                     </td>
                     <td className="px-4 py-3">
-                      {o.type === "atraso" ? (
-                        <div className="flex flex-col items-start gap-1">
-                          <span className="font-mono tabular-nums text-ink">{formatMinutes(o.minutesLate ?? 0)}</span>
-                          {o.justified && <JustifiedBadge justified />}
-                        </div>
-                      ) : o.type === "falta" ? (
+                      {o.type === "falta" ? (
                         <JustifiedBadge justified={o.justified} />
                       ) : o.type === "folga" ? (
                         <div className="flex flex-col items-start gap-0.5">

@@ -3,7 +3,7 @@
 Sistema web interno da CFFGROUP (múltiplos usuários simultâneos) com dois módulos:
 
 - **Estoque** (`/`) — materiais de escritório, retiradas e relatórios de consumo.
-- **Frequência** (`/frequencia`) — atrasos, faltas, atestados e folgas dos colaboradores, com filtros por mês/setor, exportação CSV e relatórios mensais.
+- **Frequência** (`/frequencia`) — faltas, atestados e folgas dos colaboradores, com filtros por mês/setor, exportação CSV e relatórios mensais.
 
 ## Stack
 
@@ -53,9 +53,11 @@ Senhas são guardadas só como hash (scrypt); sessões duram 12 horas e ficam re
 
 - **Acesso à frequência**: nome, e-mail, hash da senha, perfil (administrador ou acesso), se está ativo e último acesso; mais as sessões abertas.
 - **Colaborador**: nome, setor, cargo, total de folgas a que tem direito e se está ativo (inativos somem da lista ao registrar novas ocorrências, mas o histórico continua).
-- **Ocorrência**: tipo (`atraso`, `falta`, `atestado` ou `folga`), data inicial e final (atestados e folgas podem cobrir vários dias), minutos de atraso, se foi justificada, gestor que concedeu (folga) e observações. O saldo de folgas é o total do colaborador menos os dias de folga já lançados; a API recusa folgas acima do saldo. Guarda uma cópia do nome e setor do colaborador, como as retiradas fazem com o material.
+- **Ocorrência**: tipo (`falta`, `atestado` ou `folga`), data inicial e final (atestados e folgas podem cobrir vários dias), se foi justificada, gestor que concedeu (folga) e observações. O saldo de folgas é o total do colaborador menos os dias de folga já lançados; a API recusa folgas acima do saldo. Guarda uma cópia do nome e setor do colaborador, como as retiradas fazem com o material.
 
 Excluir um material não apaga o histórico de retiradas associado a ele; excluir um colaborador também preserva suas ocorrências.
+
+O tipo `atraso` foi retirado do sistema em 30/09/2026. Registros antigos desse tipo continuam no banco (coluna `minutesLate` inclusive), mas a API não os lista nem aceita novos.
 
 Atestados são dados de saúde (LGPD): o sistema não tem campo de CID/diagnóstico de propósito.
 

@@ -37,7 +37,6 @@ export interface OccurrenceInput {
   type: OccurrenceType;
   date: Date;
   endDate: Date;
-  minutesLate: number | null;
   justified: boolean;
   approvedBy: string | null;
   notes: string | null;
@@ -80,19 +79,8 @@ export function validateOccurrenceInput(body: unknown): { data: OccurrenceInput 
     if (!approvedBy) return { error: "Informe o gestor que concedeu a folga." };
   }
 
-  let minutesLate: number | null = null;
-  if (type === "atraso") {
-    minutesLate = Number(b.minutesLate);
-    if (!Number.isInteger(minutesLate) || minutesLate <= 0) {
-      return { error: "Informe os minutos de atraso (número inteiro maior que zero)." };
-    }
-    if (minutesLate > 24 * 60) {
-      return { error: "O atraso não pode passar de 24 horas." };
-    }
-  }
-
   const justified = isMultiDay(type) ? true : b.justified === true;
   const notes = typeof b.notes === "string" && b.notes.trim() ? b.notes.trim() : null;
 
-  return { data: { employeeId, type, date, endDate, minutesLate, justified, approvedBy, notes } };
+  return { data: { employeeId, type, date, endDate, justified, approvedBy, notes } };
 }
