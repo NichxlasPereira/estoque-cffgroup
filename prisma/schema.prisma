@@ -133,3 +133,60 @@ model FrequenciaSession {
 
   @@index([userId])
 }
+
+// Admissão digital: o RH cria, o candidato envia os documentos por um link
+// privado (sem login) e o RH aprova ou recusa cada um.
+model Admission {
+  id            String    @id @default(cuid())
+  candidateName String
+  email         String?
+  phone         String?
+  role          String?
+  department    String?
+  startDate     DateTime?
+  status        String    @default("em_andamento") // "em_andamento" | "concluida" | "cancelada"
+  notes         String?
+  // Link do candidato: o banco guarda só o hash do token.
+  tokenHash      String   @unique
+  tokenExpiresAt DateTime
+  createdBy      String?
+  // Colaborador criado ao concluir a admissão.
+  employeeId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  documents AdmissionDocument[]
+}
+
+model AdmissionDocument {
+  id          String    @id @default(cuid())
+  admissionId String
+  admission   Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  required    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  status      String    @default("pendente") // "pendente" | "enviado" | "aprovado" | "recusado"
+  reviewNote  String?
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  files AdmissionFile[]
+
+  @@index([admissionId])
+}
+
+model AdmissionFile {
+  id         String            @id @default(cuid())
+  documentId String
+  document   AdmissionDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  fileName   String
+  mimeType   String
+  size       Int
+  storedName String            @unique
+  createdAt  DateTime          @default(now())
+
+  @@index([documentId])
+}

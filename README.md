@@ -46,11 +46,23 @@ Tudo fica atrás da autenticação geral do site (`BASIC_AUTH_USER` / `BASIC_AUT
 
 Senhas são guardadas só como hash (scrypt); sessões duram 12 horas e ficam registradas no banco (o navegador guarda só um token aleatório). A verificação de acesso é feita em cada rota da API, não só no proxy.
 
+## Admissão digital
+
+Na frequência (RH), a aba **admissões** controla a admissão 100% digital:
+
+1. O RH cria a admissão (nome, contato, cargo, setor, início previsto) e escolhe os documentos pedidos — já vem um modelo padrão de admissão CLT, ajustável (obrigatório/opcional, incluir outros).
+2. O sistema gera um **link pessoal** para o candidato (válido por 30 dias), com atalho para enviar por WhatsApp ou e-mail. O link fica fora de todas as senhas do site — quem dá acesso é o próprio token aleatório na URL, do qual o banco guarda só o hash. Por isso o link só aparece na hora em que é gerado; se perder, gere outro (o anterior para de funcionar).
+3. O candidato abre o link no celular, envia foto ou PDF de cada documento (até 10 MB, vários arquivos por documento) e acompanha a situação: *não enviado*, *em análise*, *aprovado* ou *recusado* — com o motivo, para reenviar.
+4. O RH abre os arquivos, aprova ou recusa (a recusa exige motivo). Com todos os obrigatórios aprovados, **Concluir admissão** cria o colaborador ativo (ou reaproveita um com o mesmo nome) e desativa o link.
+
+Os arquivos ficam em `admissoes/`, ao lado do banco (local: `prisma/admissoes/`, fora do git; produção: o volume `/data`). Só o RH logado consegue abri-los; o candidato vê apenas nome e situação dos próprios documentos. Excluir a admissão apaga os arquivos.
+
 ## Modelo de dados
 
 - **Material**: nome, categoria, unidade, quantidade, estoque mínimo, local, fornecedor, preço e link de compra.
 - **Retirada**: cópia dos dados do material no momento da retirada (para manter o histórico legível mesmo após edição ou exclusão do material), quantidade, data e responsável.
 
+- **Admissão**: dados do candidato, situação, hash do link e validade; cada **documento pedido** tem situação, motivo da recusa e quem avaliou, e pode ter vários **arquivos**.
 - **Acesso à frequência**: nome, e-mail, hash da senha, perfil (administrador ou acesso), se está ativo e último acesso; mais as sessões abertas.
 - **Colaborador**: nome, setor, cargo, total de folgas a que tem direito e se está ativo (inativos somem da lista ao registrar novas ocorrências, mas o histórico continua).
 - **Ocorrência**: tipo (`falta`, `atestado` ou `folga`), data inicial e final (atestados e folgas podem cobrir vários dias), se foi justificada, gestor que concedeu (folga) e observações. O saldo de folgas é o total do colaborador menos os dias de folga já lançados; a API recusa folgas acima do saldo. Guarda uma cópia do nome e setor do colaborador, como as retiradas fazem com o material.

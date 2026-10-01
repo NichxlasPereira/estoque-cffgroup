@@ -1,0 +1,27 @@
+import { NextRequest, NextResponse } from "next/server";
+import { admissionByToken } from "@/lib/admissionServer";
+
+const LINK_INVALID = "Este link de admissão não é válido ou expirou. Fale com o RH da CFFGROUP.";
+
+/** Portal do candidato: só o que ele precisa ver — nada de dados internos do RH. */
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  const admission = await admissionByToken(token);
+  if (!admission) return NextResponse.json({ error: LINK_INVALID }, { status: 404 });
+
+  return NextResponse.json({
+    candidateName: admission.candidateName,
+    role: admission.role,
+    startDate: admission.startDate,
+    tokenExpiresAt: admission.tokenExpiresAt,
+    documents: admission.documents.map((d) => ({
+      id: d.id,
+      name: d.name,
+      description: d.description,
+      required: d.required,
+      status: d.status,
+      reviewNote: d.status === "recusado" ? d.reviewNote : null,
+      files: d.files.map((f) => ({ id: f.id, fileName: f.fileName, size: f.size })),
+    })),
+  });
+}

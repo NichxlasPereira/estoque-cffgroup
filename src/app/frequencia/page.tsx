@@ -34,6 +34,7 @@ import {
 import { formatDateBR } from "@/lib/format";
 import { endOtherModuleSession, redirectIfSessionExpired } from "@/lib/sessionClient";
 import { AccessPanel, ChangeOwnPasswordModal } from "@/components/attendance/AccessPanel";
+import { AdmissionsPanel } from "@/components/admission/AdmissionsPanel";
 
 interface SessionUser {
   id: string;
@@ -47,6 +48,7 @@ const ATTENDANCE_TABS: TabItem<AttendanceTabKey>[] = [
   { key: "ocorrencias", label: "ocorrências" },
   { key: "colaboradores", label: "colaboradores" },
   { key: "relatorios", label: "relatórios" },
+  { key: "admissoes", label: "admissões" },
 ];
 
 function adminTabs(pendingRequests: number): TabItem<AttendanceTabKey>[] {
@@ -393,6 +395,8 @@ export default function FrequenciaPage() {
 
         {tab === "acessos" && me?.role === "admin" ? (
           <AccessPanel currentUserId={me.id} onChanged={fetchMe} />
+        ) : tab === "admissoes" ? (
+          <AdmissionsPanel departments={departments} onEmployeesChanged={fetchEmployees} />
         ) : (
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <AttendanceFilters

@@ -3,11 +3,19 @@ import { FREQ_USER_COOKIE } from "@/lib/frequenciaCookie";
 import { MODULES, isValidSessionToken, moduleForPath, modulePassword } from "@/lib/moduleAuth";
 
 export function proxy(request: NextRequest) {
+  // Portal de admissão: o candidato é externo e entra só pelo link privado
+  // (token aleatório, validado em cada rota). Fica fora de todas as senhas.
+  if (isAdmissionPortal(request.nextUrl.pathname)) return NextResponse.next();
+
   const basicAuthFailure = checkBasicAuth(request);
   if (basicAuthFailure) return basicAuthFailure;
   return checkFrequencia(request) ?? checkModulePassword(request) ?? NextResponse.next();
 }
 
+
+function isAdmissionPortal(p: string): boolean {
+  return p.startsWith("/admissao/") || p.startsWith("/api/admissao/");
+}
 
 const FREQ_PUBLIC = new Set([
   "/frequencia/entrar",
@@ -19,7 +27,15 @@ const FREQ_PUBLIC = new Set([
 
 function isFrequenciaPath(p: string): boolean {
   const under = (base: string) => p === base || p.startsWith(`${base}/`);
-  return under("/frequencia") || under("/api/frequencia") || under("/api/employees") || under("/api/occurrences") || under("/api/attachments");
+  return (
+    under("/frequencia") ||
+    under("/api/frequencia") ||
+    under("/api/employees") ||
+    under("/api/occurrences") ||
+    under("/api/attachments") ||
+    under("/api/admissions") ||
+    under("/api/admission-files")
+  );
 }
 
 /**
