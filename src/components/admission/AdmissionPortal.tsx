@@ -107,7 +107,7 @@ export function AdmissionPortal({ token }: { token: string }) {
       <div className="flex flex-col gap-2">
         <h1 className="font-display text-3xl font-bold leading-tight text-ink">Olá, {firstName}!</h1>
         <p className="text-sm text-muted">
-          Esta é a sua admissão digital na CFFGROUP{data.role ? ` para ${data.role}` : ""}
+          Este é o seu onboarding digital na CFFGROUP{data.role ? ` para ${data.role}` : ""}
           {data.startDate ? `, com início previsto em ${formatDateBR(data.startDate)}` : ""}. Envie cada documento
           abaixo — foto do celular ou PDF. O RH avalia e você acompanha por aqui.
         </p>
@@ -146,7 +146,7 @@ export function AdmissionPortal({ token }: { token: string }) {
       </ul>
 
       <p className="text-xs leading-relaxed text-muted">
-        Seus documentos são usados apenas para a sua admissão e só a equipe de RH da CFFGROUP tem acesso a eles
+        Seus documentos são usados apenas para o seu onboarding e só a equipe de RH da CFFGROUP tem acesso a eles
         (LGPD). Não compartilhe este link — ele é pessoal.
       </p>
     </Shell>
@@ -251,7 +251,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           >
             <span className="font-display text-sm font-bold text-white">C</span>
           </div>
-          <span className="font-display text-sm font-bold tracking-tight text-ink">cffgroup · admissão digital</span>
+          <span className="font-display text-sm font-bold tracking-tight text-ink">cffgroup · onboarding</span>
         </div>
         <ThemeToggle />
       </div>

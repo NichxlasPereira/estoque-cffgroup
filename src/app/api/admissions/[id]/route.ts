@@ -25,14 +25,14 @@ export async function PATCH(
   const { id } = await params;
 
   const admission = await prisma.admission.findUnique({ where: { id }, include: ADMISSION_INCLUDE });
-  if (!admission) return NextResponse.json({ error: "Admissão não encontrada." }, { status: 404 });
+  if (!admission) return NextResponse.json({ error: "Onboarding não encontrado." }, { status: 404 });
 
   const body = await request.json().catch(() => null);
   const action = body?.action;
 
   if (action === "cancelar" || action === "reabrir") {
     if (admission.status === "concluida") {
-      return NextResponse.json({ error: "Uma admissão concluída não pode ser alterada." }, { status: 409 });
+      return NextResponse.json({ error: "Um onboarding concluído não pode ser alterado." }, { status: 409 });
     }
     const updated = await prisma.admission.update({
       where: { id },
@@ -44,7 +44,7 @@ export async function PATCH(
 
   if (action === "concluir") {
     if (admission.status !== "em_andamento") {
-      return NextResponse.json({ error: "Só admissões em andamento podem ser concluídas." }, { status: 409 });
+      return NextResponse.json({ error: "Só onboardings em andamento podem ser concluídos." }, { status: 409 });
     }
     const progress = admissionProgress(admission.documents.map((d) => ({ required: d.required, status: d.status as never })));
     if (progress.approved < progress.required) {
@@ -97,7 +97,7 @@ export async function DELETE(
     where: { id },
     include: { documents: { include: { files: { select: { storedName: true } } } } },
   });
-  if (!admission) return NextResponse.json({ error: "Admissão não encontrada." }, { status: 404 });
+  if (!admission) return NextResponse.json({ error: "Onboarding não encontrado." }, { status: 404 });
 
   // Documentos e arquivos saem em cascata no banco; os arquivos em disco, aqui.
   await prisma.admission.delete({ where: { id } });

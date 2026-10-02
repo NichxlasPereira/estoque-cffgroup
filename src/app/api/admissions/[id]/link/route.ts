@@ -13,9 +13,9 @@ export async function POST(
   const { id } = await params;
 
   const admission = await prisma.admission.findUnique({ where: { id } });
-  if (!admission) return NextResponse.json({ error: "Admissão não encontrada." }, { status: 404 });
+  if (!admission) return NextResponse.json({ error: "Onboarding não encontrado." }, { status: 404 });
   if (admission.status !== "em_andamento") {
-    return NextResponse.json({ error: "Só admissões em andamento têm link ativo." }, { status: 409 });
+    return NextResponse.json({ error: "Só onboardings em andamento têm link ativo." }, { status: 409 });
   }
 
   const { token, tokenHash, tokenExpiresAt } = newAdmissionToken();

@@ -13,7 +13,7 @@ export async function POST(
   const { id } = await params;
 
   const admission = await prisma.admission.findUnique({ where: { id }, include: { documents: true } });
-  if (!admission) return NextResponse.json({ error: "Admissão não encontrada." }, { status: 404 });
+  if (!admission) return NextResponse.json({ error: "Onboarding não encontrado." }, { status: 404 });
 
   const body = await request.json().catch(() => null);
   const parsed = parseChecklist([body]);

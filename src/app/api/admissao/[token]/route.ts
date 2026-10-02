@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { admissionByToken } from "@/lib/admissionServer";
 
-const LINK_INVALID = "Este link de admissão não é válido ou expirou. Fale com o RH da CFFGROUP.";
+const LINK_INVALID = "Este link de onboarding não é válido ou expirou. Fale com o RH da CFFGROUP.";
 
 /** Portal do candidato: só o que ele precisa ver — nada de dados internos do RH. */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {

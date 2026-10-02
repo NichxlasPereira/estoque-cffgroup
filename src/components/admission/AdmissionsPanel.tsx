@@ -79,7 +79,7 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
       setCreating(false);
       await load();
       setLink({ url: result.link, admission: result.admission });
-      toast.success("Admissão criada.");
+      toast.success("Onboarding criado.");
     } catch (err) {
       errorToast(err);
     }
@@ -102,7 +102,7 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3">
         <p className="max-w-xl text-sm text-muted">
-          Crie a admissão, envie o link para o candidato e acompanhe aqui cada documento: em análise, aprovado ou
+          Crie o onboarding, envie o link para o candidato e acompanhe aqui cada documento: em análise, aprovado ou
           recusado. Ao concluir, a pessoa entra como colaborador ativo.
         </p>
         <div className="flex items-center gap-2">
@@ -113,13 +113,13 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
             aria-label="Filtrar por situação"
           >
             <option value="em_andamento">Em andamento</option>
-            <option value="concluida">Concluídas</option>
-            <option value="cancelada">Canceladas</option>
+            <option value="concluida">Concluídos</option>
+            <option value="cancelada">Cancelados</option>
             <option value="">Todas</option>
           </select>
           <Button onClick={() => setCreating(true)} className="!px-4 !py-2 text-xs">
             <IconPlus className="h-3.5 w-3.5" />
-            Nova admissão
+            Novo onboarding
           </Button>
         </div>
       </div>
@@ -130,10 +130,10 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
         ) : visible.length === 0 ? (
           <EmptyState
             icon={<IconUsers className="h-6 w-6" />}
-            title={admissions.length === 0 ? "Nenhuma admissão ainda" : "Nenhuma admissão nesta situação"}
+            title={admissions.length === 0 ? "Nenhum onboarding ainda" : "Nenhum onboarding nesta situação"}
             text={
               admissions.length === 0
-                ? "Clique em “Nova admissão” para gerar o link de envio de documentos do candidato."
+                ? "Clique em “Novo onboarding” para gerar o link de envio de documentos do candidato."
                 : "Troque o filtro para ver as outras."
             }
           />
@@ -225,7 +225,7 @@ function AdmissionDetail({
   return (
     <div className="flex flex-col gap-4">
       <button type="button" onClick={onBack} className="self-start text-sm text-muted hover:text-ink">
-        ← Todas as admissões
+        ← Todos os onboardings
       </button>
 
       <div className="flex flex-wrap items-start justify-between gap-4 rounded-[14px] border border-border bg-surface p-5">
@@ -283,7 +283,7 @@ function AdmissionDetail({
                   }, `${admission.candidateName} agora é colaborador ativo.`)
                 }
               >
-                Concluir admissão
+                Concluir onboarding
               </Button>
             </>
           )}
@@ -294,17 +294,17 @@ function AdmissionDetail({
               onClick={() =>
                 act(
                   () => send(base, "PATCH", { action: open ? "cancelar" : "reabrir" }),
-                  open ? "Admissão cancelada." : "Admissão reaberta."
+                  open ? "Onboarding cancelado." : "Onboarding reaberto."
                 )
               }
             >
-              {open ? "Cancelar admissão" : "Reabrir"}
+              {open ? "Cancelar onboarding" : "Reabrir"}
             </Button>
           )}
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
-            title="Excluir admissão e documentos"
+            title="Excluir onboarding e documentos"
             className="rounded-[8px] p-2 text-muted transition hover:bg-surface-2 hover:text-critical"
           >
             <IconTrash className="h-4 w-4" />
@@ -437,7 +437,7 @@ function AdmissionDetail({
       <Modal
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
-        title="Excluir admissão"
+        title="Excluir onboarding"
         maxWidthClassName="max-w-md"
         footer={
           <>
@@ -453,7 +453,7 @@ function AdmissionDetail({
                   setConfirmDelete(false);
                   await onChanged();
                   onBack();
-                  toast.success("Admissão excluída.");
+                  toast.success("Onboarding excluído.");
                 } catch (err) {
                   errorToast(err);
                 }
@@ -465,7 +465,7 @@ function AdmissionDetail({
         }
       >
         <p className="text-sm text-ink">
-          A admissão de <strong>{admission.candidateName}</strong> e todos os documentos enviados serão apagados
+          O onboarding de <strong>{admission.candidateName}</strong> e todos os documentos enviados serão apagados
           definitivamente. O link do candidato deixa de funcionar.
         </p>
       </Modal>
@@ -521,7 +521,7 @@ function RefuseModal({
 function LinkModal({ link, onClose }: { link: { url: string; admission: AdmissionInfo }; onClose: () => void }) {
   const { url, admission } = link;
   const firstName = admission.candidateName.split(" ")[0];
-  const message = `Olá, ${firstName}! Para sua admissão na CFFGROUP, envie seus documentos por este link pessoal: ${url}`;
+  const message = `Olá, ${firstName}! Para o seu onboarding na CFFGROUP, envie seus documentos por este link pessoal: ${url}`;
   const phone = admission.phone?.replace(/\D/g, "");
   const whatsapp = `https://wa.me/${phone ? (phone.length <= 11 ? `55${phone}` : phone) : ""}?text=${encodeURIComponent(message)}`;
 
@@ -570,7 +570,7 @@ function LinkModal({ link, onClose }: { link: { url: string; admission: Admissio
           </a>
           {admission.email && (
             <a
-              href={`mailto:${admission.email}?subject=${encodeURIComponent("Documentos para admissão — CFFGROUP")}&body=${encodeURIComponent(message)}`}
+              href={`mailto:${admission.email}?subject=${encodeURIComponent("Documentos para o onboarding — CFFGROUP")}&body=${encodeURIComponent(message)}`}
               className="inline-flex items-center rounded-full border border-border-strong px-4 py-2 text-xs font-semibold text-ink transition hover:bg-ink hover:text-bg"
             >
               Enviar por e-mail

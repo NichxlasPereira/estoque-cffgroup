@@ -83,7 +83,7 @@ export function NewAdmissionModal({ open, onClose, onSubmit, departments }: NewA
     <Modal
       open={open}
       onClose={onClose}
-      title="Nova admissão"
+      title="Novo onboarding"
       maxWidthClassName="max-w-2xl"
       footer={
         <>

@@ -5,8 +5,8 @@ export type DocumentStatus = "pendente" | "enviado" | "aprovado" | "recusado";
 
 export const ADMISSION_STATUS_LABEL: Record<AdmissionStatus, string> = {
   em_andamento: "Em andamento",
-  concluida: "Concluída",
-  cancelada: "Cancelada",
+  concluida: "Concluído",
+  cancelada: "Cancelado",
 };
 
 export const DOCUMENT_STATUS_LABEL: Record<DocumentStatus, string> = {

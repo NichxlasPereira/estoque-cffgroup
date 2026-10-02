@@ -46,7 +46,7 @@ Tudo fica atrás da autenticação geral do site (`BASIC_AUTH_USER` / `BASIC_AUT
 
 Senhas são guardadas só como hash (scrypt); sessões duram 12 horas e ficam registradas no banco (o navegador guarda só um token aleatório). A verificação de acesso é feita em cada rota da API, não só no proxy.
 
-## Admissão digital
+## Onboarding (admissão digital)
 
 Na frequência (RH), a aba **onboarding** controla a admissão 100% digital:
 
