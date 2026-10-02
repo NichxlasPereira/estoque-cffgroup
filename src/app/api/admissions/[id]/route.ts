@@ -5,6 +5,7 @@ import { removeAttachmentFiles } from "@/lib/attachmentStorage";
 import { ADMISSION_INCLUDE, publicAdmission } from "@/lib/admissionServer";
 import { parseAdmissionFields } from "@/lib/admissionValidation";
 import { admissionProgress } from "@/lib/admission";
+import { exportAdmissionToDrive } from "@/lib/admissionDrive";
 
 function nameKey(name: string): string {
   return name.trim().replace(/\s+/g, " ").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -70,13 +71,13 @@ export async function PATCH(
               },
             })
           ).id;
-      return tx.admission.update({
-        where: { id },
-        data: { status: "concluida", employeeId },
-        include: ADMISSION_INCLUDE,
-      });
+      return tx.admission.update({ where: { id }, data: { status: "concluida", employeeId } });
     });
-    return NextResponse.json(publicAdmission(updated));
+    // Copia os documentos aprovados para o Google Drive. Se falhar, a conclusão
+    // continua valendo — o erro fica na admissão e o RH pode tentar de novo.
+    await exportAdmissionToDrive(updated.id);
+    const withDrive = await prisma.admission.findUnique({ where: { id }, include: ADMISSION_INCLUDE });
+    return NextResponse.json(publicAdmission(withDrive!));
   }
 
   const fields = parseAdmissionFields(body);

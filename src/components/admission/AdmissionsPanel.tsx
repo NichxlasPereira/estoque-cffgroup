@@ -56,6 +56,12 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
   // Abre mostrando todos: um filtro escondido fazia onboardings concluídos "sumirem".
   const [statusFilter, setStatusFilter] = useState<AdmissionStatus | "">("");
 
+  const [drive, setDrive] = useState<DriveCheck | null>(null);
+
+  useEffect(() => {
+    send("/api/frequencia/drive", "GET").then(setDrive).catch(() => undefined);
+  }, []);
+
   const load = useCallback(async () => {
     try {
       setAdmissions(await send("/api/admissions", "GET"));
@@ -102,6 +108,7 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
 
   return (
     <div className="flex flex-col gap-4">
+      <DriveStatusBar drive={drive} />
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3">
         <p className="max-w-xl text-sm text-muted">
           Crie o onboarding, envie o link para o candidato e acompanhe aqui cada documento: em análise, aprovado ou
@@ -280,8 +287,9 @@ function AdmissionDetail({
                 title={p.approved < p.required ? "Aprove todos os documentos obrigatórios primeiro" : undefined}
                 onClick={() =>
                   act(async () => {
-                    await send(base, "PATCH", { action: "concluir" });
+                    const done: AdmissionInfo = await send(base, "PATCH", { action: "concluir" });
                     onEmployeesChanged();
+                    if (done.driveStatus === "erro") toast.error("Não foi possível enviar ao Google Drive — veja o aviso no onboarding.");
                   }, `${admission.candidateName} agora é colaborador ativo.`)
                 }
               >
@@ -315,6 +323,14 @@ function AdmissionDetail({
       </div>
 
       <ul className="flex flex-col gap-3">
+        {admission.status === "concluida" && (
+          <li>
+            <DriveExportBox
+              admission={admission}
+              onRetry={() => act(() => send(`${base}/drive`, "POST"), "Envio ao Google Drive refeito.")}
+            />
+          </li>
+        )}
         {admission.documents.map((doc) => (
           <li key={doc.id} className="rounded-[14px] border border-border bg-surface p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -581,5 +597,100 @@ function LinkModal({ link, onClose }: { link: { url: string; admission: Admissio
         </div>
       </div>
     </Modal>
+  );
+}
+
+interface DriveCheck {
+  configured: boolean;
+  ok: boolean;
+  error?: string;
+  folderName?: string;
+  folderUrl?: string;
+  serviceAccount?: string;
+}
+
+/** Faixa no topo: os onboardings concluídos vão para o Google Drive? */
+function DriveStatusBar({ drive }: { drive: DriveCheck | null }) {
+  if (!drive) return null;
+  if (drive.ok) {
+    return (
+      <p className="flex flex-wrap items-center gap-1.5 rounded-[14px] border border-ok bg-ok-soft px-4 py-2.5 text-sm text-ink">
+        <span className="font-semibold text-ok">Google Drive conectado.</span> Ao concluir, os documentos vão para a pasta{" "}
+        <a href={drive.folderUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline">
+          {drive.folderName}
+        </a>
+        .
+      </p>
+    );
+  }
+  if (!drive.configured) {
+    return (
+      <p className="rounded-[14px] border border-border bg-surface px-4 py-2.5 text-sm text-muted">
+        Google Drive ainda não configurado — os documentos ficam só aqui no sistema. Assim que configurar, use
+        “Enviar ao Drive” nos onboardings concluídos.
+      </p>
+    );
+  }
+  return (
+    <p className="rounded-[14px] border border-critical bg-critical-soft px-4 py-2.5 text-sm text-ink">
+      <strong className="text-critical">Google Drive com problema:</strong> {drive.error}
+      {drive.serviceAccount && (
+        <span className="block text-xs text-muted">Conta de serviço: {drive.serviceAccount}</span>
+      )}
+    </p>
+  );
+}
+
+function DriveExportBox({ admission, onRetry }: { admission: AdmissionInfo; onRetry: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const retry = async () => {
+    setBusy(true);
+    try {
+      await onRetry();
+    } finally {
+      setBusy(false);
+    }
+  };
+  const button = (label: string) => (
+    <Button variant="ghost" className="!px-4 !py-1.5 text-xs" disabled={busy} onClick={retry}>
+      {busy ? "Enviando..." : label}
+    </Button>
+  );
+
+  if (admission.driveStatus === "enviado") {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-ok bg-ok-soft px-4 py-3 text-sm">
+        <span className="text-ink">
+          <strong className="text-ok">Documentos no Google Drive</strong>
+          {admission.driveSyncedAt && ` · enviados em ${formatDateBR(admission.driveSyncedAt)}`}
+        </span>
+        {admission.driveFolderUrl && (
+          <a
+            href={admission.driveFolderUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-ok underline-offset-2 hover:underline"
+          >
+            Abrir pasta no Drive →
+          </a>
+        )}
+      </div>
+    );
+  }
+  if (admission.driveStatus === "erro") {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-critical bg-critical-soft px-4 py-3 text-sm">
+        <span className="text-ink">
+          <strong className="text-critical">Não foi possível enviar ao Google Drive.</strong> {admission.driveError}
+        </span>
+        {button("Tentar de novo")}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3 text-sm">
+      <span className="text-muted">Os documentos deste onboarding ainda não foram enviados ao Google Drive.</span>
+      {button("Enviar ao Drive")}
+    </div>
   );
 }

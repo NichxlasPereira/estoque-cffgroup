@@ -152,6 +152,12 @@ model Admission {
   createdBy      String?
   // Colaborador criado ao concluir a admissão.
   employeeId String?
+  // Cópia dos documentos no Google Drive, feita ao concluir.
+  driveStatus    String? // "enviado" | "erro" | "nao_configurado"
+  driveFolderId  String?
+  driveFolderUrl String?
+  driveError     String?
+  driveSyncedAt  DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -186,6 +192,8 @@ model AdmissionFile {
   mimeType   String
   size       Int
   storedName String            @unique
+  // Arquivo já copiado para o Google Drive (evita duplicar ao tentar de novo).
+  driveFileId String?
   createdAt  DateTime          @default(now())
 
   @@index([documentId])

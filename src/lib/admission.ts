@@ -84,6 +84,10 @@ export interface AdmissionInfo {
   tokenExpiresAt: string;
   createdBy: string | null;
   employeeId: string | null;
+  driveStatus: "enviado" | "erro" | "nao_configurado" | null;
+  driveFolderUrl: string | null;
+  driveError: string | null;
+  driveSyncedAt: string | null;
   createdAt: string;
   documents: AdmissionDocumentInfo[];
 }

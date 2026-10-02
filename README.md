@@ -57,6 +57,20 @@ Na frequência (RH), a aba **onboarding** controla a admissão 100% digital:
 
 Os arquivos ficam em `admissoes/`, ao lado do banco (local: `prisma/admissoes/`, fora do git; produção: o volume `/data`). Só o RH logado consegue abri-los; o candidato vê apenas nome e situação dos próprios documentos. Excluir a admissão apaga os arquivos.
 
+### Cópia no Google Drive
+
+Ao **concluir** um onboarding, os documentos aprovados são copiados para o Google Drive: uma pasta por pessoa (`Nome – data de início`) dentro da pasta configurada, com arquivos nomeados pelo documento (`CPF.pdf`, `Documento de identidade (RG ou CNH) (1).png`…). O onboarding mostra o link da pasta; se o envio falhar, mostra o motivo e o botão **Tentar de novo**, que só envia o que faltou. A faixa no topo da aba onboarding indica se a conexão está ok.
+
+Configuração (uma vez, pelo administrador do Google Workspace):
+
+1. **Google Cloud Console** → crie (ou escolha) um projeto → *APIs e serviços* → ative a **Google Drive API**.
+2. *IAM e administrador* → **Contas de serviço** → criar conta (ex.: `onboarding-rh`) → aba *Chaves* → *Adicionar chave* → **JSON**. Guarde o arquivo baixado com cuidado: ele dá acesso ao Drive. (Se a criação de chaves estiver bloqueada pela política `iam.disableServiceAccountKeyCreation`, um administrador da organização precisa liberar para esse projeto.)
+3. **Google Drive** → crie um **Drive compartilhado** (ex.: "RH – Onboarding") com acesso só do RH → *Gerenciar membros* → adicione o e-mail da conta de serviço (`…@….iam.gserviceaccount.com`) como **Gerente de conteúdo**. Contas de serviço não têm espaço no "Meu Drive"; precisa ser um Drive compartilhado.
+4. Abra a pasta de destino nesse Drive compartilhado e copie o ID do endereço (`drive.google.com/drive/folders/`**`ESTE-TRECHO`**).
+5. No Railway (*Variables*): `GOOGLE_SERVICE_ACCOUNT_KEY` = o conteúdo **inteiro** do arquivo JSON; `GOOGLE_DRIVE_FOLDER_ID` = o ID da pasta.
+
+Sem essas variáveis, tudo funciona normalmente e os documentos ficam só no sistema; depois de configurar, use **Enviar ao Drive** nos onboardings já concluídos.
+
 ## Modelo de dados
 
 - **Material**: nome, categoria, unidade, quantidade, estoque mínimo, local, fornecedor, preço e link de compra.
