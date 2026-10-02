@@ -53,7 +53,8 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [link, setLink] = useState<{ url: string; admission: AdmissionInfo } | null>(null);
-  const [statusFilter, setStatusFilter] = useState<AdmissionStatus | "">("em_andamento");
+  // Abre mostrando todos: um filtro escondido fazia onboardings concluídos "sumirem".
+  const [statusFilter, setStatusFilter] = useState<AdmissionStatus | "">("");
 
   const load = useCallback(async () => {
     try {
@@ -72,6 +73,7 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
     [admissions, statusFilter]
   );
   const selected = admissions?.find((a) => a.id === selectedId) ?? null;
+  const count = (status: AdmissionStatus) => (admissions ?? []).filter((a) => a.status === status).length;
 
   async function create(values: NewAdmissionValues) {
     try {
@@ -112,10 +114,10 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
             className="rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-xs text-ink focus:border-accent focus:outline-none"
             aria-label="Filtrar por situação"
           >
-            <option value="em_andamento">Em andamento</option>
-            <option value="concluida">Concluídos</option>
-            <option value="cancelada">Cancelados</option>
-            <option value="">Todas</option>
+            <option value="">Todos ({admissions?.length ?? 0})</option>
+            <option value="em_andamento">Em andamento ({count("em_andamento")})</option>
+            <option value="concluida">Concluídos ({count("concluida")})</option>
+            <option value="cancelada">Cancelados ({count("cancelada")})</option>
           </select>
           <Button onClick={() => setCreating(true)} className="!px-4 !py-2 text-xs">
             <IconPlus className="h-3.5 w-3.5" />
