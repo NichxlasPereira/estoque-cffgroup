@@ -48,7 +48,7 @@ Senhas são guardadas só como hash (scrypt); sessões duram 12 horas e ficam re
 
 ## Admissão digital
 
-Na frequência (RH), a aba **admissões** controla a admissão 100% digital:
+Na frequência (RH), a aba **onboarding** controla a admissão 100% digital:
 
 1. O RH cria a admissão (nome, contato, cargo, setor, início previsto) e escolhe os documentos pedidos — já vem um modelo padrão de admissão CLT, ajustável (obrigatório/opcional, incluir outros).
 2. O sistema gera um **link pessoal** para o candidato (válido por 30 dias), com atalho para enviar por WhatsApp ou e-mail. O link fica fora de todas as senhas do site — quem dá acesso é o próprio token aleatório na URL, do qual o banco guarda só o hash. Por isso o link só aparece na hora em que é gerado; se perder, gere outro (o anterior para de funcionar).

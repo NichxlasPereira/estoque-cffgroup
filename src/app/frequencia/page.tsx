@@ -48,7 +48,7 @@ const ATTENDANCE_TABS: TabItem<AttendanceTabKey>[] = [
   { key: "ocorrencias", label: "ocorrências" },
   { key: "colaboradores", label: "colaboradores" },
   { key: "relatorios", label: "relatórios" },
-  { key: "admissoes", label: "admissões" },
+  { key: "admissoes", label: "onboarding" },
 ];
 
 function adminTabs(pendingRequests: number): TabItem<AttendanceTabKey>[] {
