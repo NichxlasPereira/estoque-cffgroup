@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { DocumentStatus, FieldType, admissionProgress, fieldsProgress, normalizeFieldValue } from "@/lib/admission";
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENT_MB, formatFileSize } from "@/lib/attendance";
@@ -36,25 +37,42 @@ interface PortalData {
   documents: PortalDocument[];
 }
 
+/** Tudo o que é obrigatório já foi enviado: dados completos e nenhum documento faltando ou recusado. */
+export function submissionComplete(data: Pick<PortalData, "fields" | "documents">): boolean {
+  const fields = fieldsProgress(data.fields);
+  return (
+    fields.filled >= fields.required &&
+    data.documents.every((d) => !d.required || d.status === "enviado" || d.status === "aprovado")
+  );
+}
+
 /** Página do candidato: envia os documentos pedidos e acompanha a análise do RH. */
 export function AdmissionPortal({ token }: { token: string }) {
   const [data, setData] = useState<PortalData | null>(null);
   const [error, setError] = useState<string>();
   const [uploading, setUploading] = useState<string | null>(null);
+  const router = useRouter();
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<PortalData | null> => {
     const res = await fetch(`/api/admissao/${token}`, { cache: "no-store" });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(body.error || "Não foi possível abrir este link.");
-      return;
+      return null;
     }
     setData(body);
+    return body;
   }, [token]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Depois de um envio: se com ele ficou tudo completo, vai para o agradecimento.
+  const refreshAfterSend = useCallback(async () => {
+    const fresh = await load();
+    if (fresh && submissionComplete(fresh)) router.push(`/admissao/${token}/enviado`);
+  }, [load, router, token]);
 
   async function upload(doc: PortalDocument, files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -76,7 +94,7 @@ export function AdmissionPortal({ token }: { token: string }) {
     }
     setUploading(null);
     if (sent > 0) toast.success(sent === 1 ? "Arquivo enviado." : `${sent} arquivos enviados.`);
-    await load();
+    await refreshAfterSend();
   }
 
   async function removeFile(fileId: string) {
@@ -145,7 +163,7 @@ export function AdmissionPortal({ token }: { token: string }) {
         </p>
       </div>
 
-      {data.fields.length > 0 && <DataForm token={token} fields={data.fields} onSaved={load} />}
+      {data.fields.length > 0 && <DataForm token={token} fields={data.fields} onSaved={refreshAfterSend} />}
 
       <h2 className="font-display text-xl font-bold text-ink">Seus documentos</h2>
       <ul className="flex flex-col gap-3">
