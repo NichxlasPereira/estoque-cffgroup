@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { DocumentStatus, admissionProgress } from "@/lib/admission";
+import { DocumentStatus, FieldType, admissionProgress, fieldsProgress, normalizeFieldValue } from "@/lib/admission";
 import { ATTACHMENT_ACCEPT, MAX_ATTACHMENT_MB, formatFileSize } from "@/lib/attendance";
 import { formatDateBR } from "@/lib/format";
 import { ThemeToggle } from "../ThemeToggle";
@@ -19,8 +19,17 @@ interface PortalDocument {
   files: { id: string; fileName: string; size: number }[];
 }
 
+interface PortalField {
+  id: string;
+  label: string;
+  type: FieldType;
+  required: boolean;
+  value: string | null;
+}
+
 interface PortalData {
-  candidateName: string;
+  candidateName: string | null;
+  fields: PortalField[];
   role: string | null;
   startDate: string | null;
   tokenExpiresAt: string;
@@ -100,16 +109,17 @@ export function AdmissionPortal({ token }: { token: string }) {
   const progress = admissionProgress(data.documents);
   const done = progress.approved === progress.required;
   const pct = progress.required ? Math.round((progress.approved / progress.required) * 100) : 0;
-  const firstName = data.candidateName.split(" ")[0];
+  const firstName = data.candidateName?.split(" ")[0];
+  const dataProgress = fieldsProgress(data.fields);
 
   return (
     <Shell>
       <div className="flex flex-col gap-2">
-        <h1 className="font-display text-3xl font-bold leading-tight text-ink">Olá, {firstName}!</h1>
+        <h1 className="font-display text-3xl font-bold leading-tight text-ink">Olá{firstName ? `, ${firstName}` : ""}!</h1>
         <p className="text-sm text-muted">
           Este é o seu onboarding digital na CFFGROUP{data.role ? ` para ${data.role}` : ""}
-          {data.startDate ? `, com início previsto em ${formatDateBR(data.startDate)}` : ""}. Envie cada documento
-          abaixo — foto do celular ou PDF. O RH avalia e você acompanha por aqui.
+          {data.startDate ? `, com início previsto em ${formatDateBR(data.startDate)}` : ""}. Preencha seus dados e
+          envie cada documento abaixo — foto do celular ou PDF. O RH avalia e você acompanha por aqui.
         </p>
       </div>
 
@@ -126,6 +136,8 @@ export function AdmissionPortal({ token }: { token: string }) {
           <div className="h-full rounded-full bg-ok transition-all" style={{ width: `${pct}%` }} />
         </div>
         <p className="mt-2 text-xs text-muted">
+          {dataProgress.filled < dataProgress.required &&
+            `${dataProgress.required - dataProgress.filled} dado(s) a preencher · `}
           {progress.missing > 0 && `${progress.missing} a enviar · `}
           {progress.inReview > 0 && `${progress.inReview} em análise · `}
           {progress.refused > 0 && `${progress.refused} para reenviar · `}
@@ -133,6 +145,9 @@ export function AdmissionPortal({ token }: { token: string }) {
         </p>
       </div>
 
+      {data.fields.length > 0 && <DataForm token={token} fields={data.fields} onSaved={load} />}
+
+      <h2 className="font-display text-xl font-bold text-ink">Seus documentos</h2>
       <ul className="flex flex-col gap-3">
         {data.documents.map((doc) => (
           <DocumentCard
@@ -257,5 +272,107 @@ function Shell({ children }: { children: React.ReactNode }) {
       </div>
       {children}
     </main>
+  );
+}
+
+const INPUT_TYPE: Record<FieldType, string> = { text: "text", cpf: "text", date: "date", email: "email", tel: "tel", textarea: "text" };
+const AUTOCOMPLETE: Partial<Record<FieldType, string>> = { email: "email", tel: "tel" };
+
+function DataForm({ token, fields, onSaved }: { token: string; fields: PortalField[]; onSaved: () => Promise<void> }) {
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(fields.map((f) => [f.id, f.value ?? ""]))
+  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const progress = fieldsProgress(fields);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    const found: Record<string, string> = {};
+    for (const f of fields) {
+      const result = normalizeFieldValue(f.type, values[f.id] ?? "");
+      if ("error" in result) found[f.id] = result.error;
+    }
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admissao/${token}/fields`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ values }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrors(body.fields ?? {});
+        toast.error(body.error || "Não foi possível salvar.");
+        return;
+      }
+      setDirty(false);
+      await onSaved();
+      const missing = fields.filter((f) => f.required && !(values[f.id] ?? "").trim()).length;
+      toast.success(missing > 0 ? `Salvo. Ainda falta${missing > 1 ? "m" : ""} ${missing} campo(s) obrigatório(s).` : "Dados salvos.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-4" noValidate>
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="font-display text-xl font-bold text-ink">Seus dados</h2>
+        <span className="font-mono text-sm tabular-nums text-muted">
+          {progress.filled}/{progress.required}
+        </span>
+      </div>
+      {fields.map((f) => (
+        <label key={f.id} className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-ink">
+            {f.label}
+            {!f.required && <span className="ml-1.5 text-xs font-normal text-muted">(opcional)</span>}
+          </span>
+          {f.type === "textarea" ? (
+            <textarea
+              id={`campo-${f.id}`}
+              rows={2}
+              value={values[f.id] ?? ""}
+              onChange={(e) => {
+                setValues((v) => ({ ...v, [f.id]: e.target.value }));
+                setDirty(true);
+              }}
+              className={`w-full resize-y rounded-[10px] border bg-surface-2 px-3 py-2.5 text-base text-ink focus:outline-none ${
+                errors[f.id] ? "border-critical" : "border-border focus:border-accent"
+              }`}
+            />
+          ) : (
+            <input
+              id={`campo-${f.id}`}
+              type={INPUT_TYPE[f.type]}
+              inputMode={f.type === "cpf" ? "numeric" : undefined}
+              autoComplete={AUTOCOMPLETE[f.type] ?? (f.label === "Nome completo" ? "name" : "off")}
+              placeholder={f.type === "cpf" ? "000.000.000-00" : f.type === "tel" ? "(11) 99999-9999" : undefined}
+              value={values[f.id] ?? ""}
+              onChange={(e) => {
+                setValues((v) => ({ ...v, [f.id]: e.target.value }));
+                setDirty(true);
+              }}
+              className={`w-full rounded-[10px] border bg-surface-2 px-3 py-2.5 text-base text-ink focus:outline-none ${
+                errors[f.id] ? "border-critical" : "border-border focus:border-accent"
+              }`}
+            />
+          )}
+          {errors[f.id] && <span className="text-xs text-critical">{errors[f.id]}</span>}
+        </label>
+      ))}
+      <button
+        type="submit"
+        disabled={saving}
+        className="rounded-[10px] bg-accent px-4 py-3 text-sm font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-60"
+      >
+        {saving ? "Salvando..." : !dirty && progress.filled > 0 ? "Dados salvos ✓" : "Salvar meus dados"}
+      </button>
+    </form>
   );
 }

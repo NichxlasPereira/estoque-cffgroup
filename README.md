@@ -50,10 +50,13 @@ Senhas são guardadas só como hash (scrypt); sessões duram 12 horas e ficam re
 
 Na frequência (RH), a aba **onboarding** controla a admissão 100% digital:
 
-1. O RH cria a admissão (nome, contato, cargo, setor, início previsto) e escolhe os documentos pedidos — por padrão vêm três: documento de identidade (RG ou CNH), dados bancários (com chave Pix) e foto para crachá; dá para marcar como opcional e incluir outros.
+1. O RH clica em **Novo onboarding** — sem preencher nada. O onboarding já nasce com os dados e documentos padrão:
+   - **Dados** que o candidato preenche: nome completo, CPF, data de nascimento, e-mail, telefone/WhatsApp, endereço e chave Pix (validados: CPF com dígito verificador, e-mail, telefone com DDD).
+   - **Documentos**: identidade (RG ou CNH), dados bancários e foto para crachá.
+   No detalhe, o RH pode retirar ou pedir outros dados e documentos, marcar como opcional e preencher os dados internos (cargo, setor, início, observações — o candidato não vê).
 2. O sistema gera um **link pessoal** para o candidato (válido por 30 dias), com atalho para enviar por WhatsApp ou e-mail. O link fica fora de todas as senhas do site — quem dá acesso é o próprio token aleatório na URL, do qual o banco guarda só o hash. Por isso o link só aparece na hora em que é gerado; se perder, gere outro (o anterior para de funcionar).
-3. O candidato abre o link no celular, envia foto ou PDF de cada documento (até 10 MB, vários arquivos por documento) e acompanha a situação: *não enviado*, *em análise*, *aprovado* ou *recusado* — com o motivo, para reenviar.
-4. O RH abre os arquivos, aprova ou recusa (a recusa exige motivo). Com todos os obrigatórios aprovados, **Concluir admissão** cria o colaborador ativo (ou reaproveita um com o mesmo nome) e desativa o link.
+3. O candidato abre o link no celular, preenche **Seus dados**, envia foto ou PDF de cada documento (até 10 MB, vários arquivos por documento) e acompanha a situação: *não enviado*, *em análise*, *aprovado* ou *recusado* — com o motivo, para reenviar.
+4. O RH confere os dados, abre os arquivos e aprova ou recusa (a recusa exige motivo). Com os dados obrigatórios preenchidos e os documentos obrigatórios aprovados, **Concluir onboarding** cria o colaborador ativo, com o nome informado pelo candidato (ou reaproveita um com o mesmo nome) e desativa o link.
 
 Os arquivos ficam em `admissoes/`, ao lado do banco (local: `prisma/admissoes/`, fora do git; produção: o volume `/data`). Só o RH logado consegue abri-los; o candidato vê apenas nome e situação dos próprios documentos. Excluir a admissão apaga os arquivos.
 

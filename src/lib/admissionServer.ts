@@ -37,6 +37,7 @@ export async function admissionByToken(token: string) {
         orderBy: { sortOrder: "asc" },
         include: { files: { orderBy: { createdAt: "asc" } } },
       },
+      fields: { orderBy: { sortOrder: "asc" } },
     },
   });
   if (!admission || admission.status !== "em_andamento" || admission.tokenExpiresAt < new Date()) return null;
@@ -44,6 +45,7 @@ export async function admissionByToken(token: string) {
 }
 
 export const ADMISSION_INCLUDE = {
+  fields: { orderBy: { sortOrder: "asc" as const } },
   documents: {
     orderBy: { sortOrder: "asc" as const },
     include: {

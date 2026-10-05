@@ -4,7 +4,7 @@ import { requireFrequenciaUser } from "@/lib/frequenciaAccess";
 import { removeAttachmentFiles } from "@/lib/attachmentStorage";
 import { ADMISSION_INCLUDE, publicAdmission } from "@/lib/admissionServer";
 import { parseAdmissionFields } from "@/lib/admissionValidation";
-import { admissionProgress } from "@/lib/admission";
+import { admissionProgress, fieldsProgress } from "@/lib/admission";
 import { exportAdmissionToDrive } from "@/lib/admissionDrive";
 
 function nameKey(name: string): string {
@@ -54,17 +54,28 @@ export async function PATCH(
         { status: 409 }
       );
     }
+    const data = fieldsProgress(admission.fields);
+    if (data.filled < data.required) {
+      return NextResponse.json(
+        { error: `O candidato ainda não preencheu ${data.required - data.filled} dado(s) obrigatório(s).` },
+        { status: 409 }
+      );
+    }
+    const candidateName = admission.candidateName?.trim().replace(/\s+/g, " ");
+    if (!candidateName) {
+      return NextResponse.json({ error: "O nome do candidato ainda não foi preenchido." }, { status: 409 });
+    }
 
     const updated = await prisma.$transaction(async (tx) => {
       // Se já existe colaborador com o mesmo nome, reaproveita em vez de duplicar.
       const employees = await tx.employee.findMany({ select: { id: true, name: true } });
-      const existing = employees.find((e) => nameKey(e.name) === nameKey(admission.candidateName));
+      const existing = employees.find((e) => nameKey(e.name) === nameKey(candidateName));
       const employeeId = existing
         ? (await tx.employee.update({ where: { id: existing.id }, data: { active: true } })).id
         : (
             await tx.employee.create({
               data: {
-                name: admission.candidateName.trim().replace(/\s+/g, " "),
+                name: candidateName,
                 department: admission.department,
                 role: admission.role,
                 active: true,

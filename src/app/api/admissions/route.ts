@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireFrequenciaUser } from "@/lib/frequenciaAccess";
 import { ADMISSION_INCLUDE, admissionLink, newAdmissionToken, publicAdmission } from "@/lib/admissionServer";
 import { parseAdmissionFields, parseChecklist } from "@/lib/admissionValidation";
+import { DEFAULT_CHECKLIST, DEFAULT_FIELDS } from "@/lib/admission";
 
 export async function GET() {
   const auth = await requireFrequenciaUser();
@@ -19,10 +20,12 @@ export async function POST(request: NextRequest) {
   const auth = await requireFrequenciaUser();
   if ("response" in auth) return auth.response;
 
-  const body = await request.json().catch(() => null);
+  // Um clique basta: sem corpo, cria com os dados e documentos padrão e o
+  // candidato preenche tudo pelo link. O RH ajusta depois, se quiser.
+  const body = (await request.json().catch(() => null)) ?? {};
   const fields = parseAdmissionFields(body);
   if ("error" in fields) return NextResponse.json({ error: fields.error }, { status: 400 });
-  const checklist = parseChecklist(body?.documents);
+  const checklist = parseChecklist(body.documents ?? DEFAULT_CHECKLIST);
   if ("error" in checklist) return NextResponse.json({ error: checklist.error }, { status: 400 });
 
   const { token, tokenHash, tokenExpiresAt } = newAdmissionToken();
@@ -34,6 +37,9 @@ export async function POST(request: NextRequest) {
       createdBy: auth.user.name,
       documents: {
         create: checklist.data.map((item, index) => ({ ...item, sortOrder: index })),
+      },
+      fields: {
+        create: DEFAULT_FIELDS.map((f, index) => ({ ...f, sortOrder: index })),
       },
     },
     include: ADMISSION_INCLUDE,

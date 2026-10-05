@@ -14,6 +14,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     role: admission.role,
     startDate: admission.startDate,
     tokenExpiresAt: admission.tokenExpiresAt,
+    fields: admission.fields.map((f) => ({
+      id: f.id,
+      label: f.label,
+      type: f.type,
+      required: f.required,
+      value: f.value,
+    })),
     documents: admission.documents.map((d) => ({
       id: d.id,
       name: d.name,

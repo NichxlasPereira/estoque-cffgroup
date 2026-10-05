@@ -1,7 +1,7 @@
 import { ChecklistItem } from "./admission";
 
 export interface AdmissionFields {
-  candidateName: string;
+  candidateName: string | null;
   email: string | null;
   phone: string | null;
   role: string | null;
@@ -16,8 +16,8 @@ export function parseAdmissionFields(body: unknown): { data: AdmissionFields } |
   if (typeof body !== "object" || body === null) return { error: "Dados inválidos." };
   const b = body as Record<string, unknown>;
 
+  // O nome é opcional: normalmente o próprio candidato preenche no link.
   const candidateName = typeof b.candidateName === "string" ? b.candidateName.trim().replace(/\s+/g, " ") : "";
-  if (!candidateName) return { error: "Informe o nome do candidato." };
 
   const email = optional(b.email);
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "E-mail inválido." };
@@ -30,7 +30,7 @@ export function parseAdmissionFields(body: unknown): { data: AdmissionFields } |
 
   return {
     data: {
-      candidateName: candidateName.slice(0, 160),
+      candidateName: candidateName ? candidateName.slice(0, 160) : null,
       email: email?.toLowerCase() ?? null,
       phone: optional(b.phone, 40),
       role: optional(b.role),

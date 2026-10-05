@@ -55,7 +55,7 @@ export async function exportAdmissionToDrive(admissionId: string): Promise<void>
 
     let folderId = admission.driveFolderId;
     if (!folderId) {
-      const folder = await drive.createFolder(folderName(admission.candidateName, admission.startDate));
+      const folder = await drive.createFolder(folderName(admission.candidateName ?? "Sem nome", admission.startDate));
       folderId = folder.id;
       // Grava a pasta já: numa nova tentativa, reaproveita em vez de criar outra.
       await prisma.admission.update({

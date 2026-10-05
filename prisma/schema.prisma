@@ -138,7 +138,8 @@ model FrequenciaSession {
 // privado (sem login) e o RH aprova ou recusa cada um.
 model Admission {
   id            String    @id @default(cuid())
-  candidateName String
+  // Preenchido pelo próprio candidato no link (campo "nome").
+  candidateName String?
   email         String?
   phone         String?
   role          String?
@@ -162,6 +163,26 @@ model Admission {
   updatedAt  DateTime @updatedAt
 
   documents AdmissionDocument[]
+  fields    AdmissionField[]
+}
+
+// Dado pedido ao candidato (nome, CPF, chave Pix...). O RH escolhe quais; o
+// candidato preenche no link.
+model AdmissionField {
+  id          String    @id @default(cuid())
+  admissionId String
+  admission   Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  key         String // "nome", "cpf"... ou "extra-<n>" para campos criados pelo RH
+  label       String
+  type        String    @default("text") // text | cpf | date | email | tel | textarea
+  required    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  value       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([admissionId, key])
+  @@index([admissionId])
 }
 
 model AdmissionDocument {
