@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Frequência CFFGROUP",
+  title: "RHGroup · CFFGROUP",
   description: "Controle de faltas, atestados e folgas dos colaboradores — CFFGROUP",
 };
 

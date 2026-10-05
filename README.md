@@ -3,7 +3,7 @@
 Sistema web interno da CFFGROUP (múltiplos usuários simultâneos) com dois módulos:
 
 - **Estoque** (`/`) — materiais de escritório, retiradas e relatórios de consumo.
-- **Frequência** (`/frequencia`) — faltas, atestados e folgas dos colaboradores, com filtros por mês/setor, exportação CSV e relatórios mensais.
+- **RHGroup** (`/frequencia`, antes chamado “Frequência”) — faltas, atestados e folgas dos colaboradores, com filtros por mês/setor, exportação CSV e relatórios mensais.
 
 ## Stack
 

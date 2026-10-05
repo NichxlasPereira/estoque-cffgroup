@@ -85,7 +85,7 @@ export function AccessPanel({ currentUserId, onChanged }: AccessPanelProps) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3">
         <p className="max-w-xl text-sm text-muted">
-          Só as pessoas desta lista entram na frequência, cada uma com o próprio e-mail e senha.
+          Só as pessoas desta lista entram no RHGroup, cada uma com o próprio e-mail e senha.
           Bloquear ou remover alguém encerra o acesso na hora.
         </p>
         <Button onClick={() => setAdding(true)} className="!px-4 !py-2 text-xs">
@@ -261,7 +261,7 @@ export function AccessPanel({ currentUserId, onChanged }: AccessPanelProps) {
             </>
           ) : (
             <>
-              <strong>{removing?.name}</strong> não vai mais conseguir entrar na frequência. Os registros de
+              <strong>{removing?.name}</strong> não vai mais conseguir entrar no RHGroup. Os registros de
               ocorrências não são afetados.
             </>
           )}

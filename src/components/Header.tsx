@@ -9,7 +9,7 @@ export type ModuleKey = "estoque" | "frequencia";
 
 const MODULES: { key: ModuleKey; label: string; href: string }[] = [
   { key: "estoque", label: "estoque", href: "/" },
-  { key: "frequencia", label: "frequência", href: "/frequencia" },
+  { key: "frequencia", label: "RHGroup", href: "/frequencia" },
 ];
 
 interface HeaderProps {

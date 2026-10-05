@@ -113,7 +113,7 @@ export function ModuleLoginForm({ module, next, configured }: ModuleLoginFormPro
           prefetch={false}
           className="mt-5 inline-block text-sm text-muted underline-offset-2 hover:text-ink hover:underline"
         >
-          Ir para a frequência →
+          Ir para o RHGroup →
         </Link>
       </div>
     </main>

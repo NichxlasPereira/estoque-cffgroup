@@ -108,7 +108,7 @@ export function FrequenciaLoginForm({ next, needsSetup, setupConfigured }: Frequ
           >
             <span className="font-display text-sm font-bold text-white">C</span>
           </div>
-          <span className="font-display text-sm font-bold tracking-tight text-ink">cffgroup · RH</span>
+          <span className="font-display text-sm font-bold tracking-tight text-ink">cffgroup · RHGroup</span>
         </div>
 
         <h1 className="font-display text-2xl font-bold text-ink">
