@@ -117,6 +117,7 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
   return (
     <div className="flex flex-col gap-4">
       <DriveStatusBar drive={drive} />
+      <SheetStatusBar sheet={drive?.sheet} />
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3">
         <p className="max-w-xl text-sm text-muted">
           Crie o onboarding, envie o link para o candidato e acompanhe aqui cada documento: em análise, aprovado ou
@@ -364,6 +365,14 @@ function AdmissionDetail({
 
       <h3 className="mt-2 font-display text-lg font-semibold text-ink">Documentos</h3>
       <ul className="flex flex-col gap-3">
+        {admission.candidateName && admission.sheetStatus && admission.sheetStatus !== "nao_configurado" && (
+          <li>
+            <SheetBox
+              admission={admission}
+              onRetry={() => act(() => send(`${base}/sheet`, "POST"), "Planilha atualizada.")}
+            />
+          </li>
+        )}
         {admission.status === "concluida" && (
           <li>
             <DriveExportBox
@@ -648,6 +657,25 @@ interface DriveCheck {
   folderName?: string;
   folderUrl?: string;
   serviceAccount?: string;
+  sheet?: { configured: boolean; ok: boolean; error?: string; tab?: string; url?: string };
+}
+
+/** Linha da planilha: aparece só quando a planilha está configurada. */
+function SheetStatusBar({ sheet }: { sheet: DriveCheck["sheet"] }) {
+  if (!sheet?.configured) return null;
+  return sheet.ok ? (
+    <p className="rounded-[14px] border border-ok bg-ok-soft px-4 py-2.5 text-sm text-ink">
+      <span className="font-semibold text-ok">Planilha conectada.</span> Cada candidato que enviar tudo entra na aba{" "}
+      <a href={sheet.url} target="_blank" rel="noopener noreferrer" className="font-semibold underline">
+        {sheet.tab}
+      </a>
+      , e a situação é atualizada ao concluir ou cancelar.
+    </p>
+  ) : (
+    <p className="rounded-[14px] border border-critical bg-critical-soft px-4 py-2.5 text-sm text-ink">
+      <strong className="text-critical">Planilha com problema:</strong> {sheet.error}
+    </p>
+  );
 }
 
 /** Faixa no topo: os onboardings concluídos vão para o Google Drive? */
@@ -925,5 +953,39 @@ function InternalInfoCard({
         </Button>
       </div>
     </form>
+  );
+}
+
+function SheetBox({ admission, onRetry }: { admission: AdmissionInfo; onRetry: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  if (admission.sheetStatus === "ok") {
+    return (
+      <p className="rounded-[14px] border border-border bg-surface px-4 py-3 text-sm text-muted">
+        Registrado na planilha
+        {admission.sheetSyncedAt && ` · última atualização em ${formatDateBR(admission.sheetSyncedAt)}`}
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-critical bg-critical-soft px-4 py-3 text-sm">
+      <span className="text-ink">
+        <strong className="text-critical">Não foi possível atualizar a planilha.</strong> {admission.sheetError}
+      </span>
+      <Button
+        variant="ghost"
+        className="!px-4 !py-1.5 text-xs"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await onRetry();
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? "Atualizando..." : "Tentar de novo"}
+      </Button>
+    </div>
   );
 }

@@ -74,6 +74,18 @@ Configuração (uma vez, pelo administrador do Google Workspace):
 
 Sem essas variáveis, tudo funciona normalmente e os documentos ficam só no sistema; depois de configurar, use **Enviar ao Drive** nos onboardings já concluídos.
 
+### Planilha do Google Sheets
+
+Cada candidato que conclui o envio (botão **Enviar dados**) ganha uma linha na planilha do RH, com situação "Em análise"; ao **concluir** ou **cancelar** o onboarding, a mesma linha é atualizada ("Concluído" / "Cancelado", link da pasta no Drive). A linha é achada pelo CPF (ou pelo nome, se a planilha não tiver CPF), então reordenar a planilha não atrapalha.
+
+O sistema lê os títulos da 1ª linha da aba e preenche as colunas que reconhece — Nome/Colaborador, CPF, Data de nascimento, E-mail, Telefone/WhatsApp, Endereço, Chave Pix, Cargo/Função, Setor/Departamento, Início/Data de admissão, Situação/Status, Data do envio, Pasta/Drive, além dos dados extras pelo próprio nome —, com ou sem acento e em qualquer ordem. Colunas desconhecidas e as outras linhas não são tocadas. Numa aba vazia, ele cria os títulos. Tudo é gravado como texto puro, para nenhum valor digitado pelo candidato virar fórmula.
+
+Configuração (usa a mesma conta de serviço do Drive):
+
+1. Google Cloud → *APIs e serviços* → ative a **Google Sheets API** no mesmo projeto.
+2. Na planilha → **Compartilhar** → o e-mail da conta de serviço como **Editor** (funciona também com planilha de Gmail pessoal).
+3. No Railway: `GOOGLE_SHEETS_ID` = o trecho de `docs.google.com/spreadsheets/d/`**`ID`**`/edit`; opcional `GOOGLE_SHEETS_TAB_GID` = o número depois de `gid=` no endereço da aba (sem ele, usa a primeira aba).
+
 ## Modelo de dados
 
 - **Material**: nome, categoria, unidade, quantidade, estoque mínimo, local, fornecedor, preço e link de compra.

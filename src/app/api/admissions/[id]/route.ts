@@ -6,6 +6,7 @@ import { ADMISSION_INCLUDE, publicAdmission } from "@/lib/admissionServer";
 import { parseAdmissionFields } from "@/lib/admissionValidation";
 import { admissionProgress, fieldsProgress } from "@/lib/admission";
 import { exportAdmissionToDrive } from "@/lib/admissionDrive";
+import { syncAdmissionToSheet } from "@/lib/admissionSheet";
 
 function nameKey(name: string): string {
   return name.trim().replace(/\s+/g, " ").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
@@ -35,12 +36,13 @@ export async function PATCH(
     if (admission.status === "concluida") {
       return NextResponse.json({ error: "Um onboarding concluído não pode ser alterado." }, { status: 409 });
     }
-    const updated = await prisma.admission.update({
+    await prisma.admission.update({
       where: { id },
       data: { status: action === "cancelar" ? "cancelada" : "em_andamento" },
-      include: ADMISSION_INCLUDE,
     });
-    return NextResponse.json(publicAdmission(updated));
+    await syncAdmissionToSheet(id);
+    const updated = await prisma.admission.findUnique({ where: { id }, include: ADMISSION_INCLUDE });
+    return NextResponse.json(publicAdmission(updated!));
   }
 
   if (action === "concluir") {
@@ -87,6 +89,8 @@ export async function PATCH(
     // Copia os documentos aprovados para o Google Drive. Se falhar, a conclusão
     // continua valendo — o erro fica na admissão e o RH pode tentar de novo.
     await exportAdmissionToDrive(updated.id);
+    // Depois do Drive, para a planilha já levar o link da pasta.
+    await syncAdmissionToSheet(updated.id);
     const withDrive = await prisma.admission.findUnique({ where: { id }, include: ADMISSION_INCLUDE });
     return NextResponse.json(publicAdmission(withDrive!));
   }

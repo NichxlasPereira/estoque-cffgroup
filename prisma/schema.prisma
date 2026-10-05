@@ -159,6 +159,10 @@ model Admission {
   driveFolderUrl String?
   driveError     String?
   driveSyncedAt  DateTime?
+  // Linha na planilha do Google Sheets (criada quando o candidato envia tudo).
+  sheetStatus   String? // "ok" | "erro" | "nao_configurado"
+  sheetError    String?
+  sheetSyncedAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

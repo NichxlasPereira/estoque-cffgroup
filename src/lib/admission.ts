@@ -147,6 +147,9 @@ export interface AdmissionInfo {
   driveFolderUrl: string | null;
   driveError: string | null;
   driveSyncedAt: string | null;
+  sheetStatus: "ok" | "erro" | "nao_configurado" | null;
+  sheetError: string | null;
+  sheetSyncedAt: string | null;
   createdAt: string;
   documents: AdmissionDocumentInfo[];
   fields: AdmissionFieldInfo[];

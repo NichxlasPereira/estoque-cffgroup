@@ -14,10 +14,11 @@ import { createSign } from "node:crypto";
 
 const OAUTH_URL = process.env.GOOGLE_OAUTH_TOKEN_URL ?? "https://oauth2.googleapis.com/token";
 const API_URL = process.env.GOOGLE_DRIVE_API_URL ?? "https://www.googleapis.com";
-const SCOPE = "https://www.googleapis.com/auth/drive";
+// Drive (pasta dos documentos) e Sheets (planilha de onboarding), com a mesma conta.
+const SCOPE = "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets";
 const FOLDER_MIME = "application/vnd.google-apps.folder";
 
-interface ServiceAccountKey {
+export interface ServiceAccountKey {
   client_email: string;
   private_key: string;
 }
@@ -31,9 +32,16 @@ export class DriveError extends Error {}
 
 /** null = integração não configurada; lança DriveError se configurada errado. */
 export function driveConfig(): DriveConfig | null {
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID?.trim();
-  if (!raw || !folderId) return null;
+  const key = serviceAccountKey();
+  if (!key || !folderId) return null;
+  return { key, folderId };
+}
+
+/** null = sem chave configurada; lança DriveError se a chave estiver errada. */
+export function serviceAccountKey(): ServiceAccountKey | null {
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!raw) return null;
   let key: ServiceAccountKey;
   try {
     key = JSON.parse(raw);
@@ -43,7 +51,7 @@ export function driveConfig(): DriveConfig | null {
   if (!key.client_email || !key.private_key) {
     throw new DriveError("A chave da conta de serviço está incompleta (faltam client_email ou private_key).");
   }
-  return { key, folderId };
+  return key;
 }
 
 export function serviceAccountEmail(): string | null {
@@ -56,7 +64,7 @@ export function serviceAccountEmail(): string | null {
 
 const b64url = (input: string | Buffer) => Buffer.from(input).toString("base64url");
 
-async function accessToken(key: ServiceAccountKey): Promise<string> {
+export async function accessToken(key: ServiceAccountKey): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = b64url(JSON.stringify({ iss: key.client_email, scope: SCOPE, aud: OAUTH_URL, iat: now, exp: now + 3600 }));

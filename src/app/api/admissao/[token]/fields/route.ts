@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { admissionByToken } from "@/lib/admissionServer";
 import { FieldType, normalizeFieldValue } from "@/lib/admission";
+import { syncAdmissionToSheet } from "@/lib/admissionSheet";
 
 /** O candidato salva os dados pedidos: { values: { [fieldId]: texto } }. */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -47,5 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       },
     }),
   ]);
+  // Registra na planilha do RH sem fazer o candidato esperar pelo Google.
+  void syncAdmissionToSheet(admission.id).catch(() => undefined);
   return NextResponse.json({ ok: true });
 }
