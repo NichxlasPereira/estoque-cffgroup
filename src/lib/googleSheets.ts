@@ -67,6 +67,11 @@ export class SheetsSession {
     return `/v4/spreadsheets/${encodeURIComponent(this.spreadsheetId)}`;
   }
 
+  /** Todas as células da aba (até a coluna ZZ). */
+  async loadGrid(): Promise<string[][]> {
+    return this.read("A1:ZZ");
+  }
+
   async read(a1: string): Promise<string[][]> {
     const res = await sheetsFetch(this.token, `${this.base()}/values/${encodeURIComponent(this.range(a1))}`);
     return (await res.json()).values ?? [];

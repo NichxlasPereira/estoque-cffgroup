@@ -60,6 +60,21 @@ Na frequência (RH), a aba **onboarding** controla a admissão 100% digital:
 
 Os arquivos ficam em `admissoes/`, ao lado do banco (local: `prisma/admissoes/`, fora do git; produção: o volume `/data`). Só o RH logado consegue abri-los; o candidato vê apenas nome e situação dos próprios documentos. Excluir a admissão apaga os arquivos.
 
+### Integração com o Google (planilha e Drive)
+
+Há dois jeitos de ligar o sistema ao Google; se os dois estiverem configurados, vale o Apps Script.
+
+**Recomendado — Google Apps Script** (não precisa de Google Cloud, conta de serviço nem chave JSON, que em organizações novas do Workspace vêm bloqueadas por política):
+
+1. Na planilha do RH: *Extensões › Apps Script* → cole o conteúdo de [`integrations/google-apps-script/Codigo.gs`](integrations/google-apps-script/Codigo.gs) → ajuste `ABA_GID` (número depois de `gid=` no endereço da aba) e, se quiser, `PASTA_ID` → salve.
+2. Escolha a função **configurar** → *Executar* → autorize com a sua conta. O *Registro de execução* mostra o **código secreto** e a pasta do Drive (criada como "Onboarding RH", se `PASTA_ID` estiver vazio).
+3. *Implantar › Nova implantação* → tipo **App da Web** → executar como **Eu**, acesso **Qualquer pessoa** → copie o endereço que termina em `/exec`.
+4. No Railway: `APPS_SCRIPT_URL` = esse endereço; `APPS_SCRIPT_SECRET` = o código secreto.
+
+O script roda com a conta de quem o implantou, só aceita pedidos com o código secreto e grava tudo como texto puro. Para atualizar o código depois: *Implantar › Gerenciar implantações › editar › Nova versão* (o endereço continua o mesmo).
+
+**Alternativa — conta de serviço do Google Cloud**: descrita nas duas seções abaixo.
+
 ### Cópia no Google Drive
 
 Ao **concluir** um onboarding, os documentos aprovados são copiados para o Google Drive: uma pasta por pessoa (`Nome – data de início`) dentro da pasta configurada, com arquivos nomeados pelo documento (`CPF.pdf`, `Documento de identidade (RG ou CNH) (1).png`…). O onboarding mostra o link da pasta; se o envio falhar, mostra o motivo e o botão **Tentar de novo**, que só envia o que faltou. A faixa no topo da aba onboarding indica se a conexão está ok.

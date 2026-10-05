@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { DriveError } from "./googleDrive";
-import { SheetsSession, columnLetter, sheetsConfig } from "./googleSheets";
+import { columnLetter } from "./googleSheets";
+import { openSheetTarget } from "./googleTargets";
 
 type AdmissionForSheet = NonNullable<Awaited<ReturnType<typeof loadAdmission>>>;
 
@@ -80,21 +81,15 @@ export async function syncAdmissionToSheet(admissionId: string): Promise<void> {
   const save = (data: { sheetStatus: string; sheetError: string | null; sheetSyncedAt?: Date }) =>
     prisma.admission.update({ where: { id: admissionId }, data });
 
-  let config;
   try {
-    config = sheetsConfig();
-  } catch (err) {
-    await save({ sheetStatus: "erro", sheetError: (err as Error).message });
-    return;
-  }
-  if (!config) {
-    await save({ sheetStatus: "nao_configurado", sheetError: null });
-    return;
-  }
-
-  try {
-    const sheet = await SheetsSession.open(config);
-    let headers = (await sheet.read("1:1"))[0] ?? [];
+    const sheet = await openSheetTarget();
+    if (!sheet) {
+      await save({ sheetStatus: "nao_configurado", sheetError: null });
+      return;
+    }
+    // Uma leitura só da aba inteira: títulos e linhas (menos idas ao Google).
+    const grid = await sheet.loadGrid();
+    let headers = (grid[0] ?? []).map((h) => String(h ?? ""));
     if (headers.every((h) => !h?.trim())) {
       headers = DEFAULT_ORDER.map((id) => COLUMNS.find((c) => c.id === id)!.header);
       await sheet.writeCells(headers.map((h, i) => ({ a1: `${columnLetter(i)}1`, value: h })));
@@ -111,12 +106,11 @@ export async function syncAdmissionToSheet(admissionId: string): Promise<void> {
     let rowNumber: number | null = null;
     const lookupIndex = keyIndex >= 0 && cpfDigits ? keyIndex : nameIndex;
     if (lookupIndex >= 0) {
-      const col = columnLetter(lookupIndex);
-      const values = await sheet.read(`${col}2:${col}`);
       const target = lookupIndex === keyIndex ? cpfDigits : norm(admission.candidateName);
-      const found = values.findIndex(([v]) =>
-        lookupIndex === keyIndex ? (v ?? "").replace(/\D/g, "") === target : norm(v ?? "") === target
-      );
+      const found = grid.slice(1).findIndex((row) => {
+        const v = String(row?.[lookupIndex] ?? "");
+        return lookupIndex === keyIndex ? v.replace(/\D/g, "") === target : norm(v) === target;
+      });
       if (found >= 0) rowNumber = found + 2;
     }
 

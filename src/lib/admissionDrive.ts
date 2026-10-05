@@ -1,7 +1,8 @@
 import path from "node:path";
 import { prisma } from "./prisma";
 import { readAttachment } from "./attachmentStorage";
-import { DriveError, DriveSession, driveConfig } from "./googleDrive";
+import { DriveError } from "./googleDrive";
+import { DriveTarget, openDriveTarget } from "./googleTargets";
 
 /** Nome seguro para o Drive (sem barras nem caracteres de controle). */
 function cleanName(name: string): string {
@@ -35,23 +36,15 @@ export async function exportAdmissionToDrive(admissionId: string): Promise<void>
   const fail = (message: string) =>
     prisma.admission.update({ where: { id: admissionId }, data: { driveStatus: "erro", driveError: message.slice(0, 500) } });
 
-  let config;
   try {
-    config = driveConfig();
-  } catch (err) {
-    await fail(err instanceof Error ? err.message : "Configuração do Google Drive inválida.");
-    return;
-  }
-  if (!config) {
-    await prisma.admission.update({
-      where: { id: admissionId },
-      data: { driveStatus: "nao_configurado", driveError: null },
-    });
-    return;
-  }
-
-  try {
-    const drive = await DriveSession.open(config);
+    const drive: DriveTarget | null = await openDriveTarget();
+    if (!drive) {
+      await prisma.admission.update({
+        where: { id: admissionId },
+        data: { driveStatus: "nao_configurado", driveError: null },
+      });
+      return;
+    }
 
     let folderId = admission.driveFolderId;
     if (!folderId) {
