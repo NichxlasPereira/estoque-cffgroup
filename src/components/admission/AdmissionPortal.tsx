@@ -68,7 +68,7 @@ export function AdmissionPortal({ token }: { token: string }) {
     load();
   }, [load]);
 
-  // Depois de um envio: se com ele ficou tudo completo, vai para o agradecimento.
+  // Depois do envio final: se ficou tudo completo, vai para o agradecimento.
   const refreshAfterSend = useCallback(async () => {
     const fresh = await load();
     if (fresh && submissionComplete(fresh)) router.push(`/admissao/${token}/enviado`);
@@ -94,7 +94,7 @@ export function AdmissionPortal({ token }: { token: string }) {
     }
     setUploading(null);
     if (sent > 0) toast.success(sent === 1 ? "Arquivo enviado." : `${sent} arquivos enviados.`);
-    await refreshAfterSend();
+    await load();
   }
 
   async function removeFile(fileId: string) {
@@ -163,20 +163,26 @@ export function AdmissionPortal({ token }: { token: string }) {
         </p>
       </div>
 
-      {data.fields.length > 0 && <DataForm token={token} fields={data.fields} onSaved={refreshAfterSend} />}
-
-      <h2 className="font-display text-xl font-bold text-ink">Seus documentos</h2>
-      <ul className="flex flex-col gap-3">
-        {data.documents.map((doc) => (
-          <DocumentCard
-            key={doc.id}
-            doc={doc}
-            busy={uploading === doc.id}
-            onUpload={(files) => upload(doc, files)}
-            onRemove={removeFile}
-          />
-        ))}
-      </ul>
+      {/* Ordem do processo: preencher os dados, enviar os documentos e, por último, o botão que envia tudo. */}
+      <SubmissionForm
+        token={token}
+        fields={data.fields}
+        missingDocuments={data.documents.filter((d) => d.required && (d.status === "pendente" || d.status === "recusado"))}
+        onSent={refreshAfterSend}
+      >
+        <h2 className="font-display text-xl font-bold text-ink">Seus documentos</h2>
+        <ul className="flex flex-col gap-3">
+          {data.documents.map((doc) => (
+            <DocumentCard
+              key={doc.id}
+              doc={doc}
+              busy={uploading === doc.id}
+              onUpload={(files) => upload(doc, files)}
+              onRemove={removeFile}
+            />
+          ))}
+        </ul>
+      </SubmissionForm>
 
       <p className="text-xs leading-relaxed text-muted">
         Seus documentos são usados apenas para o seu onboarding e só a equipe de RH da CFFGROUP tem acesso a eles
@@ -202,7 +208,8 @@ function DocumentCard({
 
   return (
     <li
-      className={`rounded-[14px] border bg-surface p-4 ${
+      id={`documento-${doc.id}`}
+      className={`scroll-mt-4 rounded-[14px] border bg-surface p-4 ${
         doc.status === "recusado" ? "border-critical" : "border-border"
       }`}
     >
@@ -296,7 +303,19 @@ function Shell({ children }: { children: React.ReactNode }) {
 const INPUT_TYPE: Record<FieldType, string> = { text: "text", cpf: "text", date: "date", email: "email", tel: "tel", textarea: "text" };
 const AUTOCOMPLETE: Partial<Record<FieldType, string>> = { email: "email", tel: "tel" };
 
-function DataForm({ token, fields, onSaved }: { token: string; fields: PortalField[]; onSaved: () => Promise<void> }) {
+function SubmissionForm({
+  token,
+  fields,
+  missingDocuments,
+  onSent,
+  children,
+}: {
+  token: string;
+  fields: PortalField[];
+  missingDocuments: PortalDocument[];
+  onSent: () => Promise<void>;
+  children: React.ReactNode;
+}) {
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(fields.map((f) => [f.id, f.value ?? ""]))
   );
@@ -307,7 +326,7 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    // Só envia com tudo certo: obrigatórios preenchidos e formatos válidos.
+    // Só envia com tudo certo: obrigatórios preenchidos, formatos válidos e documentos enviados.
     const found: Record<string, string> = {};
     for (const f of fields) {
       const result = normalizeFieldValue(f.type, values[f.id] ?? "");
@@ -321,6 +340,15 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
         `Os dados não foram enviados: corrija ${invalid.length === 1 ? "o campo destacado" : `os ${invalid.length} campos destacados`}.`
       );
       document.getElementById(`campo-${invalid[0]}`)?.focus();
+      return;
+    }
+    if (missingDocuments.length > 0) {
+      toast.error(
+        missingDocuments.length === 1
+          ? `Falta enviar: ${missingDocuments[0].name}.`
+          : `Faltam ${missingDocuments.length} documentos: ${missingDocuments.map((d) => d.name).join(", ")}.`
+      );
+      document.getElementById(`documento-${missingDocuments[0].id}`)?.scrollIntoView({ behavior: "smooth" });
       return;
     }
 
@@ -338,69 +366,81 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
         return;
       }
       setDirty(false);
-      await onSaved();
-      toast.success("Dados enviados ao RH.");
+      toast.success("Tudo enviado ao RH.");
+      await onSent();
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <form onSubmit={save} className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-4" noValidate>
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="font-display text-xl font-bold text-ink">Seus dados</h2>
-        <span className="font-mono text-sm tabular-nums text-muted">
-          {progress.filled}/{progress.required}
-        </span>
+    <form onSubmit={save} className="flex flex-col gap-5" noValidate>
+      {fields.length > 0 && (
+        <div className="flex flex-col gap-4 rounded-[14px] border border-border bg-surface p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="font-display text-xl font-bold text-ink">Seus dados</h2>
+            <span className="font-mono text-sm tabular-nums text-muted">
+              {progress.filled}/{progress.required}
+            </span>
+          </div>
+          {fields.map((f) => (
+            <label key={f.id} className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-ink">
+                {f.label}
+                {!f.required && <span className="ml-1.5 text-xs font-normal text-muted">(opcional)</span>}
+              </span>
+              {f.type === "textarea" ? (
+                <textarea
+                  id={`campo-${f.id}`}
+                  rows={2}
+                  value={values[f.id] ?? ""}
+                  onChange={(e) => {
+                    setValues((v) => ({ ...v, [f.id]: e.target.value }));
+                    setErrors((errs) => ({ ...errs, [f.id]: "" }));
+                    setDirty(true);
+                  }}
+                  className={`w-full resize-y rounded-[10px] border bg-surface-2 px-3 py-2.5 text-base text-ink focus:outline-none ${
+                    errors[f.id] ? "border-critical" : "border-border focus:border-accent"
+                  }`}
+                />
+              ) : (
+                <input
+                  id={`campo-${f.id}`}
+                  type={INPUT_TYPE[f.type]}
+                  inputMode={f.type === "cpf" ? "numeric" : undefined}
+                  autoComplete={AUTOCOMPLETE[f.type] ?? (f.label === "Nome completo" ? "name" : "off")}
+                  placeholder={f.type === "cpf" ? "000.000.000-00" : f.type === "tel" ? "(11) 99999-9999" : undefined}
+                  value={values[f.id] ?? ""}
+                  onChange={(e) => {
+                    setValues((v) => ({ ...v, [f.id]: e.target.value }));
+                    setErrors((errs) => ({ ...errs, [f.id]: "" }));
+                    setDirty(true);
+                  }}
+                  className={`w-full rounded-[10px] border bg-surface-2 px-3 py-2.5 text-base text-ink focus:outline-none ${
+                    errors[f.id] ? "border-critical" : "border-border focus:border-accent"
+                  }`}
+                />
+              )}
+              {errors[f.id] && <span className="text-xs text-critical">{errors[f.id]}</span>}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {children}
+
+      <div className="flex flex-col gap-2 rounded-[14px] border border-border bg-surface p-4">
+        <p className="text-sm text-muted">
+          Confira seus dados e documentos. Ao enviar, o RH recebe tudo para análise.
+        </p>
+        <button
+          type="submit"
+          disabled={saving}
+          className="rounded-[10px] bg-accent px-4 py-3.5 text-base font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-60"
+        >
+          {saving ? "Enviando..." : !dirty && progress.filled > 0 && missingDocuments.length === 0 ? "Dados enviados ✓" : "Enviar dados"}
+        </button>
       </div>
-      {fields.map((f) => (
-        <label key={f.id} className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-ink">
-            {f.label}
-            {!f.required && <span className="ml-1.5 text-xs font-normal text-muted">(opcional)</span>}
-          </span>
-          {f.type === "textarea" ? (
-            <textarea
-              id={`campo-${f.id}`}
-              rows={2}
-              value={values[f.id] ?? ""}
-              onChange={(e) => {
-                setValues((v) => ({ ...v, [f.id]: e.target.value }));
-                setErrors((errs) => ({ ...errs, [f.id]: "" }));
-                setDirty(true);
-              }}
-              className={`w-full resize-y rounded-[10px] border bg-surface-2 px-3 py-2.5 text-base text-ink focus:outline-none ${
-                errors[f.id] ? "border-critical" : "border-border focus:border-accent"
-              }`}
-            />
-          ) : (
-            <input
-              id={`campo-${f.id}`}
-              type={INPUT_TYPE[f.type]}
-              inputMode={f.type === "cpf" ? "numeric" : undefined}
-              autoComplete={AUTOCOMPLETE[f.type] ?? (f.label === "Nome completo" ? "name" : "off")}
-              placeholder={f.type === "cpf" ? "000.000.000-00" : f.type === "tel" ? "(11) 99999-9999" : undefined}
-              value={values[f.id] ?? ""}
-              onChange={(e) => {
-                setValues((v) => ({ ...v, [f.id]: e.target.value }));
-                setErrors((errs) => ({ ...errs, [f.id]: "" }));
-                setDirty(true);
-              }}
-              className={`w-full rounded-[10px] border bg-surface-2 px-3 py-2.5 text-base text-ink focus:outline-none ${
-                errors[f.id] ? "border-critical" : "border-border focus:border-accent"
-              }`}
-            />
-          )}
-          {errors[f.id] && <span className="text-xs text-critical">{errors[f.id]}</span>}
-        </label>
-      ))}
-      <button
-        type="submit"
-        disabled={saving}
-        className="rounded-[10px] bg-accent px-4 py-3 text-sm font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-60"
-      >
-        {saving ? "Enviando..." : !dirty && progress.filled > 0 ? "Dados enviados ✓" : "Enviar dados"}
-      </button>
     </form>
   );
 }
