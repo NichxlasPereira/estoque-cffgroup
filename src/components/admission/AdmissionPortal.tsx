@@ -307,13 +307,15 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         setErrors(body.fields ?? {});
-        toast.error(body.error || "Não foi possível salvar.");
+        toast.error(body.error || "Não foi possível enviar os dados.");
         return;
       }
       setDirty(false);
       await onSaved();
       const missing = fields.filter((f) => f.required && !(values[f.id] ?? "").trim()).length;
-      toast.success(missing > 0 ? `Salvo. Ainda falta${missing > 1 ? "m" : ""} ${missing} campo(s) obrigatório(s).` : "Dados salvos.");
+      toast.success(
+        missing > 0 ? `Dados enviados. Ainda falta${missing > 1 ? "m" : ""} ${missing} campo(s) obrigatório(s).` : "Dados enviados ao RH."
+      );
     } finally {
       setSaving(false);
     }
@@ -371,7 +373,7 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
         disabled={saving}
         className="rounded-[10px] bg-accent px-4 py-3 text-sm font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-60"
       >
-        {saving ? "Salvando..." : !dirty && progress.filled > 0 ? "Dados salvos ✓" : "Salvar meus dados"}
+        {saving ? "Enviando..." : !dirty && progress.filled > 0 ? "Dados enviados ✓" : "Enviar dados"}
       </button>
     </form>
   );
