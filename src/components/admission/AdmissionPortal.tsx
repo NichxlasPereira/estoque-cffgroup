@@ -289,13 +289,22 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    // Só envia com tudo certo: obrigatórios preenchidos e formatos válidos.
     const found: Record<string, string> = {};
     for (const f of fields) {
       const result = normalizeFieldValue(f.type, values[f.id] ?? "");
       if ("error" in result) found[f.id] = result.error;
+      else if (f.required && !result.value) found[f.id] = "Preencha este campo.";
     }
     setErrors(found);
-    if (Object.keys(found).length > 0) return;
+    const invalid = Object.keys(found);
+    if (invalid.length > 0) {
+      toast.error(
+        `Os dados não foram enviados: corrija ${invalid.length === 1 ? "o campo destacado" : `os ${invalid.length} campos destacados`}.`
+      );
+      document.getElementById(`campo-${invalid[0]}`)?.focus();
+      return;
+    }
 
     setSaving(true);
     try {
@@ -312,10 +321,7 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
       }
       setDirty(false);
       await onSaved();
-      const missing = fields.filter((f) => f.required && !(values[f.id] ?? "").trim()).length;
-      toast.success(
-        missing > 0 ? `Dados enviados. Ainda falta${missing > 1 ? "m" : ""} ${missing} campo(s) obrigatório(s).` : "Dados enviados ao RH."
-      );
+      toast.success("Dados enviados ao RH.");
     } finally {
       setSaving(false);
     }
@@ -342,6 +348,7 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
               value={values[f.id] ?? ""}
               onChange={(e) => {
                 setValues((v) => ({ ...v, [f.id]: e.target.value }));
+                setErrors((errs) => ({ ...errs, [f.id]: "" }));
                 setDirty(true);
               }}
               className={`w-full resize-y rounded-[10px] border bg-surface-2 px-3 py-2.5 text-base text-ink focus:outline-none ${
@@ -358,6 +365,7 @@ function DataForm({ token, fields, onSaved }: { token: string; fields: PortalFie
               value={values[f.id] ?? ""}
               onChange={(e) => {
                 setValues((v) => ({ ...v, [f.id]: e.target.value }));
+                setErrors((errs) => ({ ...errs, [f.id]: "" }));
                 setDirty(true);
               }}
               className={`w-full rounded-[10px] border bg-surface-2 px-3 py-2.5 text-base text-ink focus:outline-none ${

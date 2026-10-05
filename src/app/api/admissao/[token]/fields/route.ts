@@ -15,17 +15,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Dados inválidos." }, { status: 400 });
   }
 
+  // Só aceita o envio completo: todo campo válido e todo obrigatório preenchido.
+  // Um campo ausente no envio conta como vazio.
   const errors: Record<string, string> = {};
   const updates: { id: string; key: string; value: string | null }[] = [];
   for (const field of admission.fields) {
-    if (!(field.id in values)) continue;
     const raw = typeof values[field.id] === "string" ? values[field.id] : "";
     const result = normalizeFieldValue(field.type as FieldType, raw);
     if ("error" in result) errors[field.id] = result.error;
+    else if (field.required && !result.value) errors[field.id] = "Preencha este campo.";
     else updates.push({ id: field.id, key: field.key, value: result.value });
   }
   if (Object.keys(errors).length > 0) {
-    return NextResponse.json({ error: "Confira os campos destacados.", fields: errors }, { status: 400 });
+    const count = Object.keys(errors).length;
+    return NextResponse.json(
+      { error: `Os dados não foram enviados: corrija ${count === 1 ? "o campo destacado" : `os ${count} campos destacados`}.`, fields: errors },
+      { status: 400 }
+    );
   }
 
   // Nome, e-mail e telefone também alimentam o cadastro do onboarding.
