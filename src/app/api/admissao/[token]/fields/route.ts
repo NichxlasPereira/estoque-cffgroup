@@ -45,6 +45,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         ...("nome" in byKey ? { candidateName: byKey.nome } : {}),
         ...("email" in byKey ? { email: byKey.email } : {}),
         ...("telefone" in byKey ? { phone: byKey.telefone } : {}),
+        ...(admission.submittedAt ? {} : { submittedAt: new Date() }),
       },
     }),
   ]);

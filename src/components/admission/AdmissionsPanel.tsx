@@ -48,12 +48,14 @@ const STATUS_STYLE: Record<AdmissionStatus, string> = {
 
 interface AdmissionsPanelProps {
   departments: string[];
+  /** Só administradores geram o link da planilha (ele dá acesso a todos os dados). */
+  isAdmin: boolean;
   /** Concluir cria um colaborador: a página recarrega a lista dela. */
   onEmployeesChanged: () => void;
 }
 
 /** Aba "admissões": admissão 100% digital, do envio dos documentos à aprovação. */
-export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsPanelProps) {
+export function AdmissionsPanel({ departments, isAdmin, onEmployeesChanged }: AdmissionsPanelProps) {
   const [admissions, setAdmissions] = useState<AdmissionInfo[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -116,6 +118,7 @@ export function AdmissionsPanel({ departments, onEmployeesChanged }: AdmissionsP
 
   return (
     <div className="flex flex-col gap-4">
+      {isAdmin && <SpreadsheetLinkCard />}
       <DriveStatusBar drive={drive} />
       <SheetStatusBar sheet={drive?.sheet} />
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3">
@@ -332,6 +335,14 @@ function AdmissionDetail({
               {open ? "Cancelar onboarding" : "Reabrir"}
             </Button>
           )}
+          {admission.documents.some((doc) => doc.files.length > 0) && (
+            <a
+              href={`${base}/zip`}
+              className="inline-flex items-center gap-2 rounded-full border border-border-strong px-4 py-2 text-xs font-semibold text-ink transition hover:bg-ink hover:text-bg"
+            >
+              Baixar documentos (.zip)
+            </a>
+          )}
           <button
             type="button"
             onClick={() => setConfirmDelete(true)}
@@ -373,7 +384,7 @@ function AdmissionDetail({
             />
           </li>
         )}
-        {admission.status === "concluida" && (
+        {admission.status === "concluida" && (admission.driveStatus === "enviado" || admission.driveStatus === "erro") && (
           <li>
             <DriveExportBox
               admission={admission}
@@ -692,14 +703,8 @@ function DriveStatusBar({ drive }: { drive: DriveCheck | null }) {
       </p>
     );
   }
-  if (!drive.configured) {
-    return (
-      <p className="rounded-[14px] border border-border bg-surface px-4 py-2.5 text-sm text-muted">
-        Google Drive ainda não configurado — os documentos ficam só aqui no sistema. Assim que configurar, use
-        “Enviar ao Drive” nos onboardings concluídos.
-      </p>
-    );
-  }
+  // Sem integração configurada, os documentos ficam no sistema (e no .zip); nada a avisar.
+  if (!drive.configured) return null;
   return (
     <p className="rounded-[14px] border border-critical bg-critical-soft px-4 py-2.5 text-sm text-ink">
       <strong className="text-critical">Google Drive com problema:</strong> {drive.error}
@@ -986,6 +991,123 @@ function SheetBox({ admission, onRetry }: { admission: AdmissionInfo; onRetry: (
       >
         {busy ? "Atualizando..." : "Tentar de novo"}
       </Button>
+    </div>
+  );
+}
+
+/** Link de exportação para a planilha do RH (=IMPORTDATA). Só administradores. */
+function SpreadsheetLinkCard() {
+  const [info, setInfo] = useState<{ active: boolean; updatedAt: string | null } | null>(null);
+  const [formula, setFormula] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setInfo(await send("/api/frequencia/planilha-link", "GET"));
+    } catch {
+      setInfo(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function generate() {
+    setBusy(true);
+    try {
+      const r = await send("/api/frequencia/planilha-link", "POST");
+      setFormula(r.formula);
+      await load();
+    } catch (err) {
+      errorToast(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revoke() {
+    setBusy(true);
+    try {
+      await send("/api/frequencia/planilha-link", "DELETE");
+      await load();
+      toast.success("Link desativado. A planilha para de receber dados.");
+    } catch (err) {
+      errorToast(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!info) return null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3">
+      <div className="min-w-0 max-w-xl text-sm">
+        <p className="font-semibold text-ink">Planilha do Google</p>
+        <p className="text-muted">
+          {info.active
+            ? `Link ativo${info.updatedAt ? ` desde ${formatDateBR(info.updatedAt)}` : ""}. A planilha puxa os candidatos que enviaram os dados, com a situação de cada um.`
+            : "Gere um link e cole a fórmula na sua planilha: ela passa a puxar os dados dos candidatos sozinha, sem nenhuma configuração no Google."}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={generate} disabled={busy} className="!px-4 !py-2 text-xs">
+          {info.active ? "Gerar novo link" : "Gerar link para a planilha"}
+        </Button>
+        {info.active && (
+          <Button variant="ghost" onClick={revoke} disabled={busy} className="!px-4 !py-2 text-xs">
+            Desativar
+          </Button>
+        )}
+      </div>
+
+      <Modal
+        open={!!formula}
+        onClose={() => setFormula(null)}
+        title="Fórmula para a planilha"
+        maxWidthClassName="max-w-xl"
+        footer={
+          <Button type="button" onClick={() => setFormula(null)}>
+            Pronto
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-3 text-sm">
+          <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-ink">
+            <li>Copie a fórmula abaixo.</li>
+            <li>Na planilha, abra uma aba vazia (ou crie uma, ex.: “Onboarding”) e clique na célula <strong>A1</strong>.</li>
+            <li>Cole a fórmula e aperte <strong>Enter</strong>. Se aparecer um aviso sobre dados externos, clique em <strong>Permitir acesso</strong>.</li>
+          </ol>
+          <textarea
+            readOnly
+            value={formula ?? ""}
+            rows={3}
+            onFocus={(e) => e.target.select()}
+            className={inputClass(false) + " resize-none font-mono text-xs"}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            className="self-start !px-4 !py-2 text-xs"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(formula ?? "");
+                toast.success("Fórmula copiada.");
+              } catch {
+                toast.error("Não foi possível copiar. Selecione o texto e copie.");
+              }
+            }}
+          >
+            Copiar fórmula
+          </Button>
+          <p className="text-xs text-muted">
+            O Google atualiza esses dados sozinho, mas pode levar até cerca de 1 hora para aparecer uma mudança. A fórmula
+            só aparece agora; se perder, gere um novo link (o anterior para de funcionar e a planilha precisa da fórmula
+            nova). Quem tiver o link vê os dados dos candidatos, então mantenha a planilha restrita ao RH.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }

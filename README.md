@@ -60,7 +60,16 @@ Na frequência (RH), a aba **onboarding** controla a admissão 100% digital:
 
 Os arquivos ficam em `admissoes/`, ao lado do banco (local: `prisma/admissoes/`, fora do git; produção: o volume `/data`). Só o RH logado consegue abri-los; o candidato vê apenas nome e situação dos próprios documentos. Excluir a admissão apaga os arquivos.
 
-### Integração com o Google (planilha e Drive)
+### Planilha e documentos sem configurar nada no Google (em uso)
+
+- **Planilha:** na aba onboarding, um administrador clica em **Gerar link para a planilha** e cola a fórmula `=IMPORTDATA("<link>")` na célula A1 de uma aba vazia. A planilha passa a puxar sozinha uma linha por candidato que enviou os dados (data do envio, nome, CPF, nascimento, e-mail, telefone, endereço, chave Pix, cargo, setor, início, situação e os dados extras). O Google atualiza em até ~1 hora. O link (`/api/planilha/<token>/onboarding.csv`) não pede senha — o token aleatório é a chave, o banco guarda só o hash, e **Gerar novo link** ou **Desativar** invalida o anterior na hora. Quem tem o link vê os dados: mantenha a planilha restrita ao RH.
+- **Documentos:** cada onboarding tem **Baixar documentos (.zip)** — uma pasta com o nome da pessoa e os arquivos nomeados pelo documento, prontos para arrastar para o Drive.
+
+### Integração automática com o Google (opcional)
+
+Se um dia a empresa liberar, o sistema também sabe gravar direto na planilha e no Drive.
+
+
 
 Há dois jeitos de ligar o sistema ao Google; se os dois estiverem configurados, vale o Apps Script.
 

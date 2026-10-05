@@ -159,6 +159,8 @@ model Admission {
   driveFolderUrl String?
   driveError     String?
   driveSyncedAt  DateTime?
+  // Quando o candidato enviou os dados pela primeira vez (botão "Enviar dados").
+  submittedAt DateTime?
   // Linha na planilha do Google Sheets (criada quando o candidato envia tudo).
   sheetStatus   String? // "ok" | "erro" | "nao_configurado"
   sheetError    String?
@@ -222,4 +224,12 @@ model AdmissionFile {
   createdAt  DateTime          @default(now())
 
   @@index([documentId])
+}
+
+// Configurações simples do sistema (chave → valor). Hoje: o hash do token do
+// link de exportação usado pela planilha do RH (=IMPORTDATA).
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
