@@ -22,33 +22,15 @@ export interface ChecklistItem {
   required: boolean;
 }
 
-/** Documentos usuais de uma admissão CLT. O RH ajusta em cada admissão. */
+/** Documentos pedidos por padrão no onboarding. O RH ajusta em cada onboarding. */
 export const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { name: "Documento de identidade (RG ou CNH)", description: "Frente e verso, legíveis.", required: true },
-  { name: "CPF", description: "Pode ser o próprio RG/CNH, se o número constar nele.", required: true },
   {
-    name: "Carteira de Trabalho Digital",
-    description: "Print da tela com seus dados pessoais e o número da CTPS.",
+    name: "Dados bancários (com chave Pix)",
+    description: "Comprovante com banco, agência e conta em seu nome, e a sua chave Pix.",
     required: true,
   },
-  { name: "Comprovante de residência", description: "Emitido nos últimos 3 meses.", required: true },
-  { name: "Título de eleitor", required: true },
-  { name: "Comprovante de escolaridade", description: "Diploma, certificado ou histórico.", required: true },
-  { name: "Certidão de nascimento ou casamento", required: true },
-  { name: "Foto 3x4", description: "Foto recente, de frente, fundo claro.", required: true },
-  {
-    name: "Dados bancários",
-    description: "Comprovante com banco, agência e conta em seu nome.",
-    required: true,
-  },
-  { name: "PIS/PASEP", description: "Se não aparecer na Carteira de Trabalho Digital.", required: false },
-  { name: "Certificado de reservista", description: "Para homens de 18 a 45 anos.", required: false },
-  {
-    name: "Certidão de nascimento e cartão de vacina dos filhos",
-    description: "Filhos menores de 14 anos (salário-família).",
-    required: false,
-  },
-  { name: "Exame admissional (ASO)", description: "Atestado de saúde ocupacional.", required: true },
+  { name: "Foto para crachá", description: "Foto recente, de frente, com fundo claro.", required: true },
 ];
 
 export interface AdmissionFileInfo {
