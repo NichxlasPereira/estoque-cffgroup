@@ -33,7 +33,7 @@ export const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { name: "Foto para crachá", description: "Foto recente, de frente, com fundo claro.", required: true },
 ];
 
-export type FieldType = "text" | "cpf" | "date" | "email" | "tel" | "textarea";
+export type FieldType = "text" | "cpf" | "rg" | "cnpj" | "date" | "email" | "tel" | "textarea";
 
 export interface FieldTemplate {
   key: string;
@@ -46,11 +46,12 @@ export interface FieldTemplate {
 export const DEFAULT_FIELDS: FieldTemplate[] = [
   { key: "nome", label: "Nome completo", type: "text", required: true },
   { key: "cpf", label: "CPF", type: "cpf", required: true },
+  { key: "rg", label: "RG", type: "rg", required: true },
   { key: "nascimento", label: "Data de nascimento", type: "date", required: true },
   { key: "email", label: "E-mail", type: "email", required: true },
   { key: "telefone", label: "Telefone / WhatsApp", type: "tel", required: true },
   { key: "endereco", label: "Endereço completo (com CEP)", type: "textarea", required: true },
-  { key: "pix", label: "Chave Pix", type: "text", required: true },
+  { key: "pix", label: "Chave Pix (CNPJ)", type: "cnpj", required: true },
 ];
 
 export interface AdmissionFieldInfo {
@@ -74,6 +75,23 @@ function validCpf(digits: string): boolean {
 }
 
 /**
+ * CNPJ numérico ou alfanumérico (emitido a partir de julho/2026): 12 caracteres
+ * A–Z/0–9 + 2 dígitos verificadores. Cada caractere vale (código ASCII − 48),
+ * o que mantém o cálculo antigo para CNPJs só com números.
+ */
+function validCnpj(value: string): boolean {
+  if (!/^[A-Z0-9]{12}\d{2}$/.test(value) || /^(.)\1{13}$/.test(value)) return false;
+  const digit = (len: number) => {
+    const weights = len === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    let sum = 0;
+    for (let i = 0; i < len; i++) sum += (value.charCodeAt(i) - 48) * weights[i];
+    const rest = sum % 11;
+    return rest < 2 ? 0 : 11 - rest;
+  };
+  return digit(12) === Number(value[12]) && digit(13) === Number(value[13]);
+}
+
+/**
  * Valida e padroniza a resposta de um campo. Retorna o valor a gravar
  * (null = vazio) ou um erro. Usada no navegador e de novo no servidor.
  */
@@ -86,6 +104,16 @@ export function normalizeFieldValue(type: FieldType, raw: string): { value: stri
       const digits = text.replace(/\D/g, "");
       if (!validCpf(digits)) return { error: "CPF inválido. Confira os números." };
       return { value: `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}` };
+    }
+    case "rg": {
+      // O formato muda de estado para estado: só confere que há um número de verdade.
+      if (text.replace(/[^0-9A-Za-z]/g, "").length < 5) return { error: "RG inválido. Digite o número completo." };
+      return { value: text.toUpperCase().replace(/\s+/g, " ") };
+    }
+    case "cnpj": {
+      const chars = text.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (!validCnpj(chars)) return { error: "CNPJ inválido. Confira os números (a chave Pix deve ser o CNPJ)." };
+      return { value: `${chars.slice(0, 2)}.${chars.slice(2, 5)}.${chars.slice(5, 8)}/${chars.slice(8, 12)}-${chars.slice(12)}` };
     }
     case "email":
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text) ? { value: text.toLowerCase() } : { error: "E-mail inválido." };

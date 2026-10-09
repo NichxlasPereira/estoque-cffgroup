@@ -300,7 +300,16 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-const INPUT_TYPE: Record<FieldType, string> = { text: "text", cpf: "text", date: "date", email: "email", tel: "tel", textarea: "text" };
+const INPUT_TYPE: Record<FieldType, string> = {
+  text: "text",
+  cpf: "text",
+  rg: "text",
+  cnpj: "text",
+  date: "date",
+  email: "email",
+  tel: "tel",
+  textarea: "text",
+};
 const AUTOCOMPLETE: Partial<Record<FieldType, string>> = { email: "email", tel: "tel" };
 
 function SubmissionForm({
@@ -409,7 +418,17 @@ function SubmissionForm({
                   type={INPUT_TYPE[f.type]}
                   inputMode={f.type === "cpf" ? "numeric" : undefined}
                   autoComplete={AUTOCOMPLETE[f.type] ?? (f.label === "Nome completo" ? "name" : "off")}
-                  placeholder={f.type === "cpf" ? "000.000.000-00" : f.type === "tel" ? "(11) 99999-9999" : undefined}
+                  placeholder={
+                    f.type === "cpf"
+                      ? "000.000.000-00"
+                      : f.type === "cnpj"
+                        ? "00.000.000/0000-00"
+                        : f.type === "tel"
+                          ? "(11) 99999-9999"
+                          : undefined
+                  }
+                  // CNPJ pode ter letras (formato alfanumérico): só maiúsculas, sem corretor.
+                  autoCapitalize={f.type === "cnpj" || f.type === "rg" ? "characters" : undefined}
                   value={values[f.id] ?? ""}
                   onChange={(e) => {
                     setValues((v) => ({ ...v, [f.id]: e.target.value }));

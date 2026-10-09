@@ -51,7 +51,7 @@ Senhas são guardadas só como hash (scrypt); sessões duram 12 horas e ficam re
 Na frequência (RH), a aba **onboarding** controla a admissão 100% digital:
 
 1. O RH clica em **Novo onboarding** — sem preencher nada. O onboarding já nasce com os dados e documentos padrão:
-   - **Dados** que o candidato preenche: nome completo, CPF, data de nascimento, e-mail, telefone/WhatsApp, endereço e chave Pix (validados: CPF com dígito verificador, e-mail, telefone com DDD).
+   - **Dados** que o candidato preenche: nome completo, CPF, RG, data de nascimento, e-mail, telefone/WhatsApp, endereço e chave Pix (CNPJ) — validados: CPF e CNPJ com dígitos verificadores (inclusive o CNPJ alfanumérico emitido desde julho/2026), RG com pelo menos 5 caracteres, e-mail e telefone com DDD.
    - **Documentos**: identidade (RG ou CNH), dados bancários e foto para crachá.
    No detalhe, o RH pode retirar ou pedir outros dados e documentos, marcar como opcional e preencher os dados internos (cargo, setor, início, observações — o candidato não vê).
 2. O sistema gera um **link pessoal** para o candidato (válido por 30 dias), com atalho para enviar por WhatsApp ou e-mail. O link fica fora de todas as senhas do site — quem dá acesso é o próprio token aleatório na URL, do qual o banco guarda só o hash. Por isso o link só aparece na hora em que é gerado; se perder, gere outro (o anterior para de funcionar).

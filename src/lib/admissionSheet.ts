@@ -38,10 +38,11 @@ const COLUMNS: Column[] = [
   { id: "data", header: "Data do envio", aliases: ["data do envio", "data de envio", "enviado em", "data"], value: () => dateBR(new Date()), onlyOnCreate: true },
   { id: "nome", header: "Nome", aliases: NAME_ALIASES, value: (a, f) => f("nome") || a.candidateName || "" },
   { id: "cpf", header: "CPF", aliases: ["cpf"], value: (_a, f) => f("cpf") },
+  { id: "rg", header: "RG", aliases: ["rg", "numero do rg", "identidade"], value: (_a, f) => f("rg") },
   { id: "email", header: "E-mail", aliases: ["e mail", "email"], value: (a, f) => f("email") || a.email || "" },
   { id: "telefone", header: "Telefone", aliases: ["telefone whatsapp", "telefone", "whatsapp", "celular", "contato"], value: (a, f) => f("telefone") || a.phone || "" },
   { id: "endereco", header: "Endereço", aliases: ["endereco completo", "endereco"], value: (_a, f) => f("endereco") },
-  { id: "pix", header: "Chave Pix", aliases: ["chave pix", "pix"], value: (_a, f) => f("pix") },
+  { id: "pix", header: "Chave Pix (CNPJ)", aliases: ["chave pix cnpj", "chave pix", "pix"], value: (_a, f) => f("pix") },
   { id: "cargo", header: "Cargo", aliases: ["cargo", "funcao"], value: (a) => a.role ?? "" },
   { id: "setor", header: "Setor", aliases: ["setor", "departamento", "area"], value: (a) => a.department ?? "" },
   { id: "situacao", header: "Situação", aliases: ["situacao", "status"], value: (a) => STATUS_LABEL[a.status] ?? a.status },
@@ -49,7 +50,7 @@ const COLUMNS: Column[] = [
 ];
 
 /** Ordem das colunas quando o sistema cria os títulos numa aba vazia. */
-const DEFAULT_ORDER = ["data", "nome", "cpf", "nascimento", "email", "telefone", "endereco", "pix", "cargo", "setor", "inicio", "situacao", "drive"];
+const DEFAULT_ORDER = ["data", "nome", "cpf", "rg", "nascimento", "email", "telefone", "endereco", "pix", "cargo", "setor", "inicio", "situacao", "drive"];
 
 /** Qual coluna (do sistema) cada título da planilha representa. */
 function mapHeaders(headers: string[], a: AdmissionForSheet): (((field: (key: string) => string) => string) | null)[] {
